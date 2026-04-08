@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "323374255459",
+    "project_id": "agroscanai-123",
+    "storage_bucket": "agroscanai-123.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:323374255459:android:fd15b7e2455bf2eb5ad756",
+        "android_client_info": {
+          "package_name": "com.example.agroscanai"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "323374255459-qsk73nob9375310nl96q16fqhk2edg24.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.agroscanai",
+            "certificate_hash": "67e3779fab929322418d971f61df77bd3ed97ac4"
+          }
+        },
+        {
+          "client_id": "323374255459-fq9bagbgbrh1ncg0t1q6n81t00eddabl.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCZP4SJbyObaCYDYziz3CcrCym-kEfgD6Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "323374255459-fq9bagbgbrh1ncg0t1q6n81t00eddabl.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
