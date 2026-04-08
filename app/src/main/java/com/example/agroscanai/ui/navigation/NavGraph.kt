@@ -9,6 +9,7 @@ import com.example.agroscanai.ui.screens.BienvenidaScreen
 import com.example.agroscanai.ui.screens.EscanearParcelaScreen
 import com.example.agroscanai.ui.screens.HomeScreen
 import com.example.agroscanai.ui.screens.LoginScreen
+import com.example.agroscanai.ui.screens.MapaLotesScreen
 import com.example.agroscanai.ui.screens.MisCultivosScreen
 import com.example.agroscanai.ui.screens.OnboardingScreen
 import com.example.agroscanai.ui.screens.RecuperarContrasenaScreen
@@ -164,6 +165,15 @@ fun NavGraph(navController: NavHostController) {
                 onMenuItemClick = { route -> navController.navigate(route) },
                 onNotificacionesClick = { navController.navigate(Routes.NOTIFICACIONES) },
                 onPerfilClick = { navController.navigate(Routes.PERFIL) }
+            )
+        }
+
+        composable(Routes.MAPA_LOTES) {
+            MapaLotesScreen(
+                onHomeClick = { navController.navigate(Routes.HOME) },
+                onNotificacionesClick = { navController.navigate(Routes.NOTIFICACIONES) },
+                onPerfilClick = { navController.navigate(Routes.PERFIL) },
+                cultivosViewModel = cultivosViewModel
             )
         }
 
