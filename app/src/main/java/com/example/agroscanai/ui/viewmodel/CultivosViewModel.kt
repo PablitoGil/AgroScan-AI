@@ -5,7 +5,9 @@ import androidx.lifecycle.viewModelScope
 import com.example.agroscanai.data.model.Cultivo
 import com.example.agroscanai.data.model.EstadoCultivo
 import com.example.agroscanai.ui.viewmodel.ResultadoEscaneo
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,18 +33,33 @@ class CultivosViewModel : ViewModel() {
     private val _error      = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    private var snapshotListener: ListenerRegistration? = null
+
+    private val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
+        if (firebaseAuth.currentUser != null) {
+            if (snapshotListener == null) cargarCultivos()
+        } else {
+            snapshotListener?.remove()
+            snapshotListener = null
+            _cultivos.value = emptyList()
+        }
+    }
+
     private fun userId() = auth.currentUser?.uid ?: ""
 
     private fun cultivosRef() =
         db.collection("users").document(userId()).collection("cultivos")
 
-    init { cargarCultivos() }
+    init {
+        auth.addAuthStateListener(authStateListener)
+    }
 
     fun cargarCultivos() {
         val uid = userId()
         if (uid.isEmpty()) return
+        snapshotListener?.remove()
         _isLoading.value = true
-        cultivosRef().addSnapshotListener { snapshot, e ->
+        snapshotListener = cultivosRef().addSnapshotListener { snapshot, e ->
             _isLoading.value = false
             if (e != null) { _error.value = "Error al cargar cultivos"; return@addSnapshotListener }
             _cultivos.value = snapshot?.documents?.map { doc ->
@@ -116,6 +133,18 @@ class CultivosViewModel : ViewModel() {
                     else -> EstadoCultivo.SALUDABLE.name
                 }
 
+                // Actualización inmediata en memoria para reflejar el estado al instante en la UI
+                _cultivos.value = _cultivos.value.map { c ->
+                    if (c.id == cultivoId) c.copy(
+                        estado          = nuevoEstado,
+                        ultimoEscaneo   = fecha,
+                        humedadPromedio = resultado.humedadSuelo,
+                        nitrogenio      = resultado.nivelNitrogenio,
+                        fosforo         = resultado.nivelFosforo,
+                        potasio         = resultado.nivelPotasio
+                    ) else c
+                }
+
                 cultivosRef().document(cultivoId).collection("escaneos").add(
                     hashMapOf(
                         "fecha"                   to fecha,
@@ -153,4 +182,10 @@ class CultivosViewModel : ViewModel() {
     }
 
     fun clearError() { _error.value = null }
+
+    override fun onCleared() {
+        super.onCleared()
+        snapshotListener?.remove()
+        auth.removeAuthStateListener(authStateListener)
+    }
 }

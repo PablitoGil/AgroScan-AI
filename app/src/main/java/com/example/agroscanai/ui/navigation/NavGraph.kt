@@ -17,6 +17,7 @@ import com.example.agroscanai.ui.screens.SplashScreen
 import com.example.agroscanai.ui.screens.VerificacionEmailScreen
 import com.example.agroscanai.ui.screens.WelcomeScreen
 import com.example.agroscanai.ui.viewmodel.AuthViewModel
+import com.example.agroscanai.ui.viewmodel.CultivosViewModel
 import com.example.agroscanai.ui.viewmodel.DroneViewModel
 
 object Routes {
@@ -52,6 +53,7 @@ object Routes {
 fun NavGraph(navController: NavHostController) {
     val authViewModel: AuthViewModel = viewModel()
     val droneViewModel: DroneViewModel = viewModel()
+    val cultivosViewModel: CultivosViewModel = viewModel()
 
     NavHost(
         navController = navController,
@@ -169,7 +171,8 @@ fun NavGraph(navController: NavHostController) {
             MisCultivosScreen(
                 onHomeClick = { navController.navigate(Routes.HOME) },
                 onNotificacionesClick = { navController.navigate(Routes.NOTIFICACIONES) },
-                onPerfilClick = { navController.navigate(Routes.PERFIL) }
+                onPerfilClick = { navController.navigate(Routes.PERFIL) },
+                cultivosViewModel = cultivosViewModel
             )
         }
 
@@ -178,7 +181,8 @@ fun NavGraph(navController: NavHostController) {
                 onHomeClick = { navController.navigate(Routes.HOME) },
                 onNotificacionesClick = { navController.navigate(Routes.NOTIFICACIONES) },
                 onPerfilClick = { navController.navigate(Routes.PERFIL) },
-                droneViewModel = droneViewModel
+                droneViewModel = droneViewModel,
+                cultivosViewModel = cultivosViewModel
             )
         }
     }
