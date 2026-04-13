@@ -15,6 +15,7 @@ data class Cultivo(
     val fosforo: Float = 0f,
     val potasio: Float = 0f,
     val indiceSalud: Float = 0f,
+    val plagasDetectadas: Boolean = false,
     val ultimoEscaneo: String = "",
     val imagenUrl: String = ""
 ) {

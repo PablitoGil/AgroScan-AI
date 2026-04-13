@@ -6,6 +6,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.agroscanai.ui.screens.BienvenidaScreen
+import com.example.agroscanai.ui.screens.DashboardSaludScreen
 import com.example.agroscanai.ui.screens.EscanearParcelaScreen
 import com.example.agroscanai.ui.screens.HomeScreen
 import com.example.agroscanai.ui.screens.LoginScreen
@@ -14,6 +15,7 @@ import com.example.agroscanai.ui.screens.MisCultivosScreen
 import com.example.agroscanai.ui.screens.OnboardingScreen
 import com.example.agroscanai.ui.screens.RecuperarContrasenaScreen
 import com.example.agroscanai.ui.screens.RegisterScreen
+import com.example.agroscanai.ui.screens.SeleccionarCultivoDashboard
 import com.example.agroscanai.ui.screens.SplashScreen
 import com.example.agroscanai.ui.screens.VerificacionEmailScreen
 import com.example.agroscanai.ui.screens.WelcomeScreen
@@ -34,6 +36,7 @@ object Routes {
     const val MIS_CULTIVOS = "mis_cultivos"
     const val MAPA_LOTES = "mapa_lotes"
     const val DASHBOARD_SALUD = "dashboard_salud"
+    const val DASHBOARD_SALUD_DETALLE = "dashboard_salud_detalle/{cultivoId}"
     const val REPORTES_IA = "reportes_ia"
     const val CLIMA = "clima"
     const val CALENDARIO = "calendario"
@@ -48,6 +51,7 @@ object Routes {
     fun bienvenida(nombre: String) = "bienvenida/${nombre.ifBlank { "Usuario" }}"
     fun detallesCultivo(cultivoId: Int) = "detalle_cultivo/$cultivoId"
     fun detallesEscaneo(escaneoId: Int) = "detalle_escaneo/$escaneoId"
+    fun dashboardSaludDetalle(cultivoId: String) = "dashboard_salud_detalle/$cultivoId"
 }
 
 @Composable
@@ -192,6 +196,28 @@ fun NavGraph(navController: NavHostController) {
                 onNotificacionesClick = { navController.navigate(Routes.NOTIFICACIONES) },
                 onPerfilClick = { navController.navigate(Routes.PERFIL) },
                 droneViewModel = droneViewModel,
+                cultivosViewModel = cultivosViewModel
+            )
+        }
+
+        composable(Routes.DASHBOARD_SALUD) {
+            SeleccionarCultivoDashboard(
+                onCultivoSelected = { cultivoId ->
+                    navController.navigate(Routes.dashboardSaludDetalle(cultivoId))
+                },
+                onHomeClick = { navController.navigate(Routes.HOME) },
+                onBackClick = { navController.popBackStack() },
+                cultivosViewModel = cultivosViewModel
+            )
+        }
+
+        composable(Routes.DASHBOARD_SALUD_DETALLE) { backStackEntry ->
+            val cultivoId = backStackEntry.arguments?.getString("cultivoId") ?: ""
+            DashboardSaludScreen(
+                cultivoId = cultivoId,
+                onHomeClick = { navController.navigate(Routes.HOME) },
+                onBackClick = { navController.popBackStack() },
+                onNotificacionesClick = { navController.navigate(Routes.NOTIFICACIONES) },
                 cultivosViewModel = cultivosViewModel
             )
         }

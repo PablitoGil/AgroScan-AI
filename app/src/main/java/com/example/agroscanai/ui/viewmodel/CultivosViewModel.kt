@@ -19,6 +19,23 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+data class UltimoEscaneoData(
+    val fecha: String = "",
+    val confianzaIA: Int = 0,
+    val gpsLat: Double = 0.0,
+    val gpsLon: Double = 0.0,
+    val humedadSuelo: Float = 0f,
+    val estresSuelo: String = "",
+    val descripcionSuelo: String = "",
+    val plagasDetectadas: Boolean = false,
+    val descripcionPlagas: String = "",
+    val nivelNitrogenio: Float = 0f,
+    val nivelFosforo: Float = 0f,
+    val nivelPotasio: Float = 0f,
+    val descripcionNutrientes: String = "",
+    val recomendacionNutrientes: String = ""
+)
+
 class CultivosViewModel : ViewModel() {
 
     private val db   = Firebase.firestore
@@ -32,6 +49,12 @@ class CultivosViewModel : ViewModel() {
 
     private val _error      = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
+
+    private val _ultimoEscaneo = MutableStateFlow<UltimoEscaneoData?>(null)
+    val ultimoEscaneo: StateFlow<UltimoEscaneoData?> = _ultimoEscaneo.asStateFlow()
+
+    private val _cargandoEscaneo = MutableStateFlow(false)
+    val cargandoEscaneo: StateFlow<Boolean> = _cargandoEscaneo.asStateFlow()
 
     private var snapshotListener: ListenerRegistration? = null
 
@@ -64,15 +87,21 @@ class CultivosViewModel : ViewModel() {
             if (e != null) { _error.value = "Error al cargar cultivos"; return@addSnapshotListener }
             _cultivos.value = snapshot?.documents?.map { doc ->
                 Cultivo(
-                    id             = doc.id,
-                    nombre         = doc.getString("nombre")         ?: "",
-                    tipoCultivo    = doc.getString("tipoCultivo")    ?: "",
-                    variedadSemilla= doc.getString("variedadSemilla")?: "",
-                    hectareas      = doc.getDouble("hectareas")      ?: 0.0,
-                    fechaSiembra   = doc.getString("fechaSiembra")   ?: "",
-                    ubicacion      = doc.getString("ubicacion")      ?: "",
-                    estado         = doc.getString("estado")         ?: EstadoCultivo.SIN_ESCANEO.name,
-                    ultimoEscaneo  = doc.getString("ultimoEscaneo")  ?: ""
+                    id               = doc.id,
+                    nombre           = doc.getString("nombre")          ?: "",
+                    tipoCultivo      = doc.getString("tipoCultivo")     ?: "",
+                    variedadSemilla  = doc.getString("variedadSemilla") ?: "",
+                    hectareas        = doc.getDouble("hectareas")       ?: 0.0,
+                    fechaSiembra     = doc.getString("fechaSiembra")    ?: "",
+                    ubicacion        = doc.getString("ubicacion")       ?: "",
+                    estado           = doc.getString("estado")          ?: EstadoCultivo.SIN_ESCANEO.name,
+                    humedadPromedio  = (doc.getDouble("humedadPromedio") ?: 0.0).toFloat(),
+                    nitrogenio       = (doc.getDouble("nitrogenio")      ?: 0.0).toFloat(),
+                    fosforo          = (doc.getDouble("fosforo")         ?: 0.0).toFloat(),
+                    potasio          = (doc.getDouble("potasio")         ?: 0.0).toFloat(),
+                    indiceSalud      = (doc.getDouble("indiceSalud")     ?: 0.0).toFloat(),
+                    plagasDetectadas = doc.getBoolean("plagasDetectadas") ?: false,
+                    ultimoEscaneo    = doc.getString("ultimoEscaneo")    ?: ""
                 )
             } ?: emptyList()
         }
@@ -164,19 +193,96 @@ class CultivosViewModel : ViewModel() {
                     )
                 ).await()
 
+                val indiceSaludCalc = run {
+                    var score = 100f
+                    if (resultado.plagasDetectadas) score -= 40f
+                    score -= when {
+                        resultado.humedadSuelo < 10f -> 35f
+                        resultado.humedadSuelo < 15f -> 25f
+                        resultado.humedadSuelo < 20f -> 15f
+                        resultado.humedadSuelo < 25f -> 5f
+                        resultado.humedadSuelo > 70f -> 10f
+                        else -> 0f
+                    }
+                    score -= when {
+                        resultado.nivelNitrogenio < 30f -> 20f
+                        resultado.nivelNitrogenio < 45f -> 12f
+                        resultado.nivelNitrogenio < 60f -> 5f
+                        else -> 0f
+                    }
+                    score -= when {
+                        resultado.nivelFosforo < 40f -> 15f
+                        resultado.nivelFosforo < 50f -> 8f
+                        resultado.nivelFosforo < 60f -> 3f
+                        else -> 0f
+                    }
+                    score -= when {
+                        resultado.nivelPotasio < 50f -> 10f
+                        resultado.nivelPotasio < 60f -> 5f
+                        else -> 0f
+                    }
+                    score.coerceIn(5f, 100f)
+                }
+
                 cultivosRef().document(cultivoId).update(
                     mapOf(
-                        "estado"         to nuevoEstado,
-                        "ultimoEscaneo"  to fecha,
-                        "humedadPromedio" to resultado.humedadSuelo,
-                        "nitrogenio"     to resultado.nivelNitrogenio,
-                        "fosforo"        to resultado.nivelFosforo,
-                        "potasio"        to resultado.nivelPotasio
+                        "estado"            to nuevoEstado,
+                        "ultimoEscaneo"     to fecha,
+                        "humedadPromedio"   to resultado.humedadSuelo,
+                        "nitrogenio"        to resultado.nivelNitrogenio,
+                        "fosforo"           to resultado.nivelFosforo,
+                        "potasio"           to resultado.nivelPotasio,
+                        "plagasDetectadas"  to resultado.plagasDetectadas,
+                        "indiceSalud"       to indiceSaludCalc
                     )
                 ).await()
 
             } catch (e: Exception) {
                 _error.value = "No se pudo guardar el escaneo."
+            }
+        }
+    }
+
+    fun cargarUltimoEscaneo(cultivoId: String) {
+        val uid = userId()
+        if (uid.isEmpty() || cultivoId.isEmpty()) return
+        viewModelScope.launch {
+            _cargandoEscaneo.value = true
+            _ultimoEscaneo.value = null
+            try {
+                val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+                val snapshot = cultivosRef()
+                    .document(cultivoId)
+                    .collection("escaneos")
+                    .get()
+                    .await()
+                val latestDoc = snapshot.documents
+                    .sortedByDescending { doc ->
+                        try { sdf.parse(doc.getString("fecha") ?: "") } catch (e: Exception) { null }
+                    }
+                    .firstOrNull()
+                if (latestDoc != null) {
+                    _ultimoEscaneo.value = UltimoEscaneoData(
+                        fecha                   = latestDoc.getString("fecha")                    ?: "",
+                        confianzaIA             = (latestDoc.getLong("confianzaIA")               ?: 0L).toInt(),
+                        gpsLat                  = latestDoc.getDouble("gpsLat")                   ?: 0.0,
+                        gpsLon                  = latestDoc.getDouble("gpsLon")                   ?: 0.0,
+                        humedadSuelo            = (latestDoc.getDouble("humedadSuelo")            ?: 0.0).toFloat(),
+                        estresSuelo             = latestDoc.getString("estresSuelo")              ?: "",
+                        descripcionSuelo        = latestDoc.getString("descripcionSuelo")         ?: "",
+                        plagasDetectadas        = latestDoc.getBoolean("plagasDetectadas")        ?: false,
+                        descripcionPlagas       = latestDoc.getString("descripcionPlagas")        ?: "",
+                        nivelNitrogenio         = (latestDoc.getDouble("nivelNitrogenio")         ?: 0.0).toFloat(),
+                        nivelFosforo            = (latestDoc.getDouble("nivelFosforo")            ?: 0.0).toFloat(),
+                        nivelPotasio            = (latestDoc.getDouble("nivelPotasio")            ?: 0.0).toFloat(),
+                        descripcionNutrientes   = latestDoc.getString("descripcionNutrientes")    ?: "",
+                        recomendacionNutrientes = latestDoc.getString("recomendacionNutrientes")  ?: ""
+                    )
+                }
+            } catch (e: Exception) {
+                _ultimoEscaneo.value = null
+            } finally {
+                _cargandoEscaneo.value = false
             }
         }
     }
