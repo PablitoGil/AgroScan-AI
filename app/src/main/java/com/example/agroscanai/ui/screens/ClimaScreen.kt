@@ -74,7 +74,6 @@ fun ClimaScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // ── Header siempre visible ────────────────────────────────────────
             ClimaHeader(
                 onBackClick           = onBackClick,
                 region                = (uiState as? ClimaUiState.Exito)?.region ?: "Cargando..."
@@ -122,8 +121,6 @@ fun ClimaScreen(
     }
 }
 
-// ── Header ────────────────────────────────────────────────────────────────────
-
 @Composable
 private fun ClimaHeader(
     onBackClick: () -> Unit,
@@ -150,8 +147,6 @@ private fun ClimaHeader(
     }
 }
 
-// ── Contenido principal ───────────────────────────────────────────────────────
-
 @Composable
 private fun ClimaContenido(pronostico: PronosticoClima) {
     val hoy = pronostico.diasPronostico.firstOrNull() ?: return
@@ -163,7 +158,6 @@ private fun ClimaContenido(pronostico: PronosticoClima) {
     ) {
         Spacer(Modifier.height(16.dp))
 
-        // ── Temperatura de hoy ────────────────────────────────────────────────
         Card(
             modifier  = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             colors    = CardDefaults.cardColors(containerColor = Color.White),
@@ -203,7 +197,6 @@ private fun ClimaContenido(pronostico: PronosticoClima) {
 
         Spacer(Modifier.height(16.dp))
 
-        // ── Pronóstico 7 días ─────────────────────────────────────────────────
         SectionLabel("PRONÓSTICO 7 DÍAS")
         Card(
             modifier  = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
@@ -225,7 +218,6 @@ private fun ClimaContenido(pronostico: PronosticoClima) {
 
         Spacer(Modifier.height(16.dp))
 
-        // ── Recomendaciones agrícolas ─────────────────────────────────────────
         if (pronostico.recomendaciones.isNotEmpty()) {
             SectionLabel("RECOMENDACIONES AGRÍCOLAS")
             Card(
@@ -263,8 +255,6 @@ private fun ClimaContenido(pronostico: PronosticoClima) {
         Spacer(Modifier.height(24.dp))
     }
 }
-
-// ── Composables internos ──────────────────────────────────────────────────────
 
 @Composable
 private fun SectionLabel(texto: String) {

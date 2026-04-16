@@ -55,7 +55,6 @@ fun SeleccionarCultivoDashboard(
             .background(Color(0xFFF5F7F5))
             .padding(innerPadding)
     ) {
-        // Header
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -83,7 +82,6 @@ fun SeleccionarCultivoDashboard(
             }
         }
 
-        // Subtitle card
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -160,8 +158,8 @@ fun SeleccionarCultivoDashboard(
                 }
             }
         }
-    } // end Column
-    } // end Scaffold content
+    }
+    }
 }
 
 @Composable

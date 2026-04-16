@@ -52,7 +52,6 @@ fun PreciosScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // ── Header ────────────────────────────────────────────────────────
             Box(
                 modifier = Modifier
                     .fillMaxWidth()

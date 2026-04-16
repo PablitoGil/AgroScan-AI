@@ -40,7 +40,6 @@ fun ConfiguracionScreen(
     var unidMetricas   by remember(usuario) { mutableStateOf(usuario?.unidadesMetricas   ?: true) }
     var modoOscuro     by remember(usuario) { mutableStateOf(usuario?.modoOscuro         ?: false) }
 
-    // Persist changes as they toggle
     fun guardarConfig() {
         perfilViewModel.actualizarConfiguracion(notifPush, sonidosAlerta, unidMetricas, modoOscuro)
     }
@@ -63,7 +62,6 @@ fun ConfiguracionScreen(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
         ) {
-            // ── Header ────────────────────────────────────────────────────────
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -86,7 +84,6 @@ fun ConfiguracionScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            // ── Notificaciones ────────────────────────────────────────────────
             ConfSeccionLabel("NOTIFICACIONES")
             ConfCard {
                 ToggleItem(
@@ -110,7 +107,6 @@ fun ConfiguracionScreen(
                 )
             }
 
-            // ── Unidades ──────────────────────────────────────────────────────
             ConfSeccionLabel("UNIDADES DE MEDIDA")
             ConfCard {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -150,7 +146,6 @@ fun ConfiguracionScreen(
                 }
             }
 
-            // ── Idioma ────────────────────────────────────────────────────────
             ConfSeccionLabel("IDIOMA")
             ConfCard {
                 Row(
@@ -178,7 +173,6 @@ fun ConfiguracionScreen(
                 }
             }
 
-            // ── Apariencia ────────────────────────────────────────────────────
             ConfSeccionLabel("APARIENCIA")
             ConfCard {
                 ToggleItem(
@@ -216,7 +210,6 @@ fun ConfiguracionScreen(
                 }
             }
 
-            // ── Datos ─────────────────────────────────────────────────────────
             ConfSeccionLabel("DATOS Y PRIVACIDAD")
             ConfCard {
                 InfoRow(
@@ -248,8 +241,6 @@ fun ConfiguracionScreen(
         }
     }
 }
-
-// ── Sub-composables ──────────────────────────────────────────────────────────
 
 @Composable
 private fun ConfSeccionLabel(texto: String) {

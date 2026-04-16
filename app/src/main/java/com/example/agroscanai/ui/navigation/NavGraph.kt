@@ -37,7 +37,6 @@ object Routes {
     const val DETALLE_CULTIVO      = "detalle_cultivo/{cultivoId}"
     const val DETALLE_ESCANEO      = "detalle_escaneo/{escaneoId}"
 
-    // Perfil y sub-secciones
     const val PERFIL               = "perfil"
     const val PERFIL_EDITAR        = "perfil_editar"
     const val PERFIL_CONFIGURACION = "perfil_configuracion"
@@ -70,7 +69,6 @@ fun NavGraph(navController: NavHostController) {
 
     NavHost(navController = navController, startDestination = Routes.SPLASH) {
 
-        // ── Auth ──────────────────────────────────────────────────────────────
         composable(Routes.SPLASH) {
             SplashScreen(
                 onFinished = {
@@ -168,7 +166,6 @@ fun NavGraph(navController: NavHostController) {
             )
         }
 
-        // ── Home y módulos principales ────────────────────────────────────────
         composable(Routes.HOME) {
             HomeScreen(
                 onMenuItemClick       = { route -> navController.navigate(route) },
@@ -290,7 +287,6 @@ fun NavGraph(navController: NavHostController) {
             )
         }
 
-        // ── Perfil ────────────────────────────────────────────────────────────
         composable(Routes.PERFIL) {
             PerfilScreen(
                 onBackClick           = { navController.popBackStack() },

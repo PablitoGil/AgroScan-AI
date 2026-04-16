@@ -28,7 +28,6 @@ sealed class ClimaUiState {
     data class Error(val mensaje: String) : ClimaUiState()
 }
 
-// Coordenadas de fallback: Buenos Aires, Argentina
 private const val LAT_DEFAULT = -34.6
 private const val LON_DEFAULT = -58.38
 private const val REGION_DEFAULT = "Buenos Aires, Argentina"

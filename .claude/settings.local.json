@@ -6,7 +6,9 @@
       "Bash(xargs grep:*)",
       "Bash(grep -r \"TODO\\\\|FIXME\" /d/AndroidStudioProjects/AndroidStudioProjects/AgroScanAI/app/src/main/java/*.kt)",
       "Bash(wc:*)",
-      "Bash(grep \"\\\\.kt$\")"
+      "Bash(grep \"\\\\.kt$\")",
+      "Bash(grep -l \"^\\\\s*//\" app/src/main/java/**/*.kt app/src/main/java/**/*.java)",
+      "Bash(grep -n \"//\" /d/AndroidStudioProjects/AndroidStudioProjects/AgroScanAI/app/src/main/java/com/example/agroscanai/ui/screens/ConfiguracionScreen.kt)"
     ]
   }
 }

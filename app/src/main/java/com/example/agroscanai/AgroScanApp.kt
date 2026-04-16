@@ -18,7 +18,6 @@ class AgroScanApp : Application() {
                 )
                 .build()
         } catch (_: Exception) {
-            // Firestore ya estaba inicializado, la persistencia offline por defecto aplica
         }
     }
 }

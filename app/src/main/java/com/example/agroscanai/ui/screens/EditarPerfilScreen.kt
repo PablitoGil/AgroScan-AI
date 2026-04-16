@@ -88,7 +88,6 @@ fun EditarPerfilScreen(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
         ) {
-            // ── Header ───────────────────────────────────────────────────────
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -144,7 +143,6 @@ fun EditarPerfilScreen(
 
             Spacer(Modifier.height((-16).dp))
 
-            // ── Información personal ─────────────────────────────────────────
             Card(
                 modifier  = Modifier
                     .fillMaxWidth()
@@ -214,7 +212,6 @@ fun EditarPerfilScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            // ── Correo electrónico ───────────────────────────────────────────
             Card(
                 modifier  = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -247,7 +244,6 @@ fun EditarPerfilScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            // ── Contraseña ───────────────────────────────────────────────────
             Card(
                 modifier  = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -284,7 +280,6 @@ fun EditarPerfilScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            // ── Tipo de cuenta ───────────────────────────────────────────────
             Card(
                 modifier  = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -333,7 +328,6 @@ fun EditarPerfilScreen(
 
             Spacer(Modifier.height(20.dp))
 
-            // ── Botón Guardar ────────────────────────────────────────────────
             Button(
                 onClick  = {
                     perfilViewModel.actualizarTodoPerfil(

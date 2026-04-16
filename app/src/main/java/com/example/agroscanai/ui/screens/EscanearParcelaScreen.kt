@@ -189,8 +189,8 @@ fun EscanearParcelaScreen(
                 }
             )
         }
-    } // end Column
-    } // end Scaffold content
+    }
+    }
 }
 
 @Composable

@@ -9,7 +9,6 @@ import retrofit2.http.Url
 
 interface YahooFinanceApi {
 
-    // Usamos @Url para incluir el símbolo (ZC=F, ZW=F, etc.) sin doble codificación
     @GET
     suspend fun getCotizacion(
         @Url url: String
@@ -24,7 +23,6 @@ interface YahooFinanceApi {
         val instance: YahooFinanceApi by lazy {
             val client = OkHttpClient.Builder()
                 .addInterceptor { chain ->
-                    // Yahoo Finance requiere User-Agent de navegador real
                     val req = chain.request().newBuilder()
                         .header(
                             "User-Agent",

@@ -181,7 +181,7 @@ fun HomeScreen(
                 .padding(horizontal = 32.dp, vertical = 16.dp)
         )
     }
-    } // end Scaffold
+    }
 }
 
 @Composable

@@ -63,24 +63,22 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
 
-    // Google Sign-In (Credential Manager)
+    // Inicio de sesión con Google
     implementation("androidx.credentials:credentials:1.3.0")
     implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
-
-    // HTTP Client – Retrofit + OkHttp
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
-    // Splash Screen API
+    //SplashScreen API
     implementation("androidx.core:core-splashscreen:1.0.1")
 
-    // OpenStreetMap – OSMDroid (sin API key, completamente gratis)
+    //OpenStreetMap
     implementation("org.osmdroid:osmdroid-android:6.1.20")
 
-    // Location (GPS)
+    //GPS
     implementation("com.google.android.gms:play-services-location:21.3.0")
 
     testImplementation(libs.junit)

@@ -131,7 +131,6 @@ fun NotificacionesScreen(
             .background(MaterialTheme.colorScheme.background)
             .padding(innerPadding)
     ) {
-        // ── Header ────────────────────────────────────────────────────────────
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -196,8 +195,8 @@ fun NotificacionesScreen(
                 item { Spacer(Modifier.height(24.dp)) }
             }
         }
-    } // end Column
-    } // end Scaffold content
+    }
+    }
 }
 
 @Composable

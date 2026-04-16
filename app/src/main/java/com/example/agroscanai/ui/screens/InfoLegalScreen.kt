@@ -51,7 +51,6 @@ fun InfoLegalScreen(
             .padding(innerPadding)
             .verticalScroll(rememberScrollState())
     ) {
-        // ── Header ────────────────────────────────────────────────────────────
         Box(
             modifier = Modifier
                 .fillMaxWidth()
