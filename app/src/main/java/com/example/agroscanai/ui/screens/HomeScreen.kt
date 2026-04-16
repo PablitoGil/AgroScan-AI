@@ -9,10 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,6 +24,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.agroscanai.R
+import com.example.agroscanai.ui.components.AgroBottomBar
+import com.example.agroscanai.ui.components.PaginaActual
 import com.example.agroscanai.ui.theme.*
 
 data class HomeMenuItem(
@@ -54,10 +53,21 @@ fun HomeScreen(
         HomeMenuItem("Precios de Mercado", R.drawable.ic_precios, "precios")
     )
 
+    Scaffold(
+        containerColor = Color(0xFFF5F7F5),
+        bottomBar = {
+            AgroBottomBar(
+                onHomeClick           = {},
+                onNotificacionesClick = onNotificacionesClick,
+                onPerfilClick         = onPerfilClick,
+                paginaActual          = PaginaActual.HOME
+            )
+        }
+    ) { innerPadding ->
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F7F5))
+            .padding(innerPadding)
             .verticalScroll(rememberScrollState())
     ) {
         Row(
@@ -82,37 +92,7 @@ fun HomeScreen(
                     lineHeight = 10.sp
                 )
             }
-
-            Spacer(modifier = Modifier.width(10.dp))
-
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(40.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(Color(0xFFEEF2EE))
-                    .clickable { }
-                    .padding(horizontal = 12.dp),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Filled.Search,
-                        contentDescription = null,
-                        tint = GrisMedio,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "Buscar en AgroScan...",
-                        fontSize = 13.sp,
-                        color = GrisMedio
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.width(10.dp))
-
+            Spacer(modifier = Modifier.weight(1f))
             Box(
                 modifier = Modifier
                     .size(38.dp)
@@ -135,50 +115,6 @@ fun HomeScreen(
                         tint = Color.White,
                         modifier = Modifier.size(22.dp)
                     )
-                }
-            }
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color.White)
-                .padding(horizontal = 20.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Home,
-                contentDescription = "Inicio",
-                tint = VerdeEsmeralda,
-                modifier = Modifier.size(28.dp)
-            )
-
-            Box {
-                Icon(
-                    imageVector = Icons.Filled.Notifications,
-                    contentDescription = "Notificaciones",
-                    tint = GrisMedio,
-                    modifier = Modifier
-                        .size(28.dp)
-                        .clickable { onNotificacionesClick() }
-                )
-                if (notificacionesCount > 0) {
-                    Box(
-                        modifier = Modifier
-                            .size(16.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFFE53935))
-                            .align(Alignment.TopEnd),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = if (notificacionesCount > 9) "9+" else notificacionesCount.toString(),
-                            color = Color.White,
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
                 }
             }
         }
@@ -245,6 +181,7 @@ fun HomeScreen(
                 .padding(horizontal = 32.dp, vertical = 16.dp)
         )
     }
+    } // end Scaffold
 }
 
 @Composable

@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.agroscanai.data.model.Cultivo
 import com.example.agroscanai.data.model.EstadoCultivo
+import com.example.agroscanai.ui.components.AgroBottomBar
+import com.example.agroscanai.ui.components.PaginaActual
 import com.example.agroscanai.ui.theme.*
 import com.example.agroscanai.ui.viewmodel.CultivosViewModel
 
@@ -30,16 +32,28 @@ import com.example.agroscanai.ui.viewmodel.CultivosViewModel
 fun SeleccionarCultivoDashboard(
     onCultivoSelected: (cultivoId: String) -> Unit = {},
     onHomeClick: () -> Unit = {},
+    onNotificacionesClick: () -> Unit = {},
     onBackClick: () -> Unit = {},
+    onPerfilClick: () -> Unit = {},
     cultivosViewModel: CultivosViewModel = viewModel()
 ) {
     val cultivos by cultivosViewModel.cultivos.collectAsState()
     val isLoading by cultivosViewModel.isLoading.collectAsState()
 
+    Scaffold(
+        bottomBar = {
+            AgroBottomBar(
+                onHomeClick = onHomeClick,
+                onNotificacionesClick = onNotificacionesClick,
+                onPerfilClick = onPerfilClick
+            )
+        }
+    ) { innerPadding ->
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF5F7F5))
+            .padding(innerPadding)
     ) {
         // Header
         Row(
@@ -66,9 +80,6 @@ fun SeleccionarCultivoDashboard(
                     fontSize = 12.sp,
                     color = GrisMedio
                 )
-            }
-            IconButton(onClick = onHomeClick) {
-                Icon(Icons.Filled.Home, contentDescription = "Inicio", tint = VerdeBosque)
             }
         }
 
@@ -149,7 +160,8 @@ fun SeleccionarCultivoDashboard(
                 }
             }
         }
-    }
+    } // end Column
+    } // end Scaffold content
 }
 
 @Composable

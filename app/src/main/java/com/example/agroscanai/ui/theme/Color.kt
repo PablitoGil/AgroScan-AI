@@ -14,3 +14,12 @@ val VerdeEsmeraldaOscuro = Color(0xFF388E3C)
 val GrisClaro = Color(0xFFF5F5F5)
 val GrisMedio = Color(0xFF9E9E9E)
 val Negro = Color(0xFF000000)
+
+// Dark theme
+val VerdePrimarioDark    = Color(0xFF81C784)
+val VerdeSecundarioDark  = Color(0xFF66BB6A)
+val FondoOscuro          = Color(0xFF121212)
+val SuperficieOscura     = Color(0xFF1E1E1E)
+val SuperficieOscura2    = Color(0xFF2C2C2C)
+val TextoPrincipalOscuro = Color(0xFFEEEEEE)
+val TextoSecOscuro       = Color(0xFF9E9E9E)

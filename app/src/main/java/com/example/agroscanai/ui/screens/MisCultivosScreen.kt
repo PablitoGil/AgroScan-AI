@@ -32,6 +32,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.agroscanai.R
 import com.example.agroscanai.data.model.Cultivo
 import com.example.agroscanai.data.model.EstadoCultivo
+import com.example.agroscanai.ui.components.AgroBottomBar
+import com.example.agroscanai.ui.components.PaginaActual
 import com.example.agroscanai.ui.theme.*
 import com.example.agroscanai.ui.viewmodel.CultivosViewModel
 
@@ -42,6 +44,7 @@ fun MisCultivosScreen(
     onHomeClick: () -> Unit = {},
     onNotificacionesClick: () -> Unit = {},
     onPerfilClick: () -> Unit = {},
+    onDetalleCultivoClick: (String) -> Unit = {},
     cultivosViewModel: CultivosViewModel = viewModel()
 ) {
     val cultivos      by cultivosViewModel.cultivos.collectAsState()
@@ -49,7 +52,6 @@ fun MisCultivosScreen(
     val error         by cultivosViewModel.error.collectAsState()
     val snackbarHost  = remember { SnackbarHostState() }
 
-    var selectedCultivo  by remember { mutableStateOf<Cultivo?>(null) }
     var showAddSheet     by remember { mutableStateOf(false) }
 
     LaunchedEffect(error) {
@@ -65,7 +67,15 @@ fun MisCultivosScreen(
                 Snackbar(snackbarData = data, containerColor = RojoAlerta, contentColor = Color.White)
             }
         },
-        containerColor = Color(0xFFF5F7F5)
+        containerColor = Color(0xFFF5F7F5),
+        bottomBar = {
+            AgroBottomBar(
+                onHomeClick           = onHomeClick,
+                onNotificacionesClick = onNotificacionesClick,
+                onPerfilClick         = onPerfilClick,
+                paginaActual          = PaginaActual.NINGUNA
+            )
+        }
     ) { innerPadding ->
 
         Box(
@@ -99,62 +109,6 @@ fun MisCultivosScreen(
                             modifier = Modifier.size(32.dp)
                         )
                         Text("AgroScan AI", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = VerdeBosque)
-                    }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(40.dp)
-                            .clip(RoundedCornerShape(20.dp))
-                            .background(Color(0xFFEEF2EE))
-                            .padding(horizontal = 12.dp),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Filled.Search, null, tint = GrisMedio, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Buscar cultivo...", fontSize = 13.sp, color = GrisMedio)
-                        }
-                    }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Box(
-                        modifier = Modifier
-                            .size(38.dp)
-                            .clip(CircleShape)
-                            .background(VerdeBosque)
-                            .clickable { onPerfilClick() },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (nombreUsuario.isNotBlank()) {
-                            Text(
-                                nombreUsuario.first().uppercaseChar().toString(),
-                                color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold
-                            )
-                        } else {
-                            Icon(Icons.Filled.Person, null, tint = Color.White, modifier = Modifier.size(22.dp))
-                        }
-                    }
-                }
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color.White)
-                        .padding(horizontal = 20.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Filled.Home, "Inicio",
-                        tint = GrisMedio,
-                        modifier = Modifier.size(28.dp).clickable { onHomeClick() }
-                    )
-                    Box {
-                        Icon(
-                            Icons.Filled.Notifications, "Notificaciones",
-                            tint = GrisMedio,
-                            modifier = Modifier.size(28.dp).clickable { onNotificacionesClick() }
-                        )
                     }
                 }
 
@@ -212,7 +166,7 @@ fun MisCultivosScreen(
                             items(cultivos, key = { it.id }) { cultivo ->
                                 CultivoCard(
                                     cultivo = cultivo,
-                                    onClick = { selectedCultivo = cultivo }
+                                    onClick = { onDetalleCultivoClick(cultivo.id) }
                                 )
                             }
                         }
@@ -247,23 +201,6 @@ fun MisCultivosScreen(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(horizontal = 32.dp, vertical = 6.dp)
-            )
-        }
-    }
-
-    selectedCultivo?.let { cultivo ->
-        ModalBottomSheet(
-            onDismissRequest = { selectedCultivo = null },
-            containerColor = Color.White,
-            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
-        ) {
-            DetalleCultivoSheet(
-                cultivo = cultivo,
-                onEliminar = {
-                    cultivosViewModel.eliminarCultivo(cultivo.id)
-                    selectedCultivo = null
-                },
-                onDismiss = { selectedCultivo = null }
             )
         }
     }
@@ -359,108 +296,6 @@ private fun CultivoCard(cultivo: Cultivo, onClick: () -> Unit) {
     }
 }
 
-@Composable
-private fun DetalleCultivoSheet(
-    cultivo: Cultivo,
-    onEliminar: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    var showConfirmDelete by remember { mutableStateOf(false) }
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp)
-            .padding(bottom = 32.dp)
-            .verticalScroll(rememberScrollState())
-    ) {
-        Text(
-            text = cultivo.nombre,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            color = VerdeBosque
-        )
-        if (cultivo.tipoCultivo.isNotBlank()) {
-            Text(cultivo.tipoCultivo, fontSize = 13.sp, color = GrisMedio)
-        }
-
-        Spacer(Modifier.height(16.dp))
-        HorizontalDivider(color = Color(0xFFE8ECE8))
-        Spacer(Modifier.height(16.dp))
-
-        DetalleSeccion(titulo = "Salud general") {
-            Text(cultivo.descripcionSalud(), fontSize = 14.sp, color = GrisHumo, lineHeight = 22.sp)
-        }
-
-        DetalleSeccion(titulo = "Último escaneo") {
-            Text(cultivo.ultimoEscaneo, fontSize = 14.sp, color = GrisHumo)
-        }
-
-        DetalleSeccion(titulo = "Área - ${cultivo.hectareas} hectáreas") {
-            val descripcion = if (cultivo.variedadSemilla.isNotBlank())
-                "Esta parcela cubre un total de ${cultivo.hectareas} hectáreas y está compuesta de ${cultivo.tipoCultivo}${if (cultivo.variedadSemilla.isNotBlank()) " (${cultivo.variedadSemilla})" else ""}."
-            else
-                "Esta parcela cubre un total de ${cultivo.hectareas} hectáreas."
-            Text(descripcion, fontSize = 14.sp, color = GrisHumo, lineHeight = 22.sp)
-        }
-
-        if (cultivo.ubicacion.isNotBlank()) {
-            DetalleSeccion(titulo = "Ubicación") {
-                Text(cultivo.ubicacion, fontSize = 14.sp, color = GrisHumo)
-            }
-        }
-
-        if (cultivo.fechaSiembra.isNotBlank()) {
-            DetalleSeccion(titulo = "Fecha de siembra") {
-                Text(cultivo.fechaSiembra, fontSize = 14.sp, color = GrisHumo)
-            }
-        }
-
-        Spacer(Modifier.height(20.dp))
-
-        if (showConfirmDelete) {
-            Text(
-                "¿Estás seguro de que deseas eliminar este cultivo?",
-                fontSize = 14.sp, color = RojoAlerta, textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedButton(
-                    onClick = { showConfirmDelete = false },
-                    modifier = Modifier.weight(1f).height(46.dp),
-                    shape = RoundedCornerShape(12.dp)
-                ) { Text("Cancelar", color = GrisHumo) }
-                Button(
-                    onClick = onEliminar,
-                    modifier = Modifier.weight(1f).height(46.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = RojoAlerta)
-                ) { Text("Eliminar", color = Color.White) }
-            }
-        } else {
-            OutlinedButton(
-                onClick = { showConfirmDelete = true },
-                modifier = Modifier.fillMaxWidth().height(46.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = RojoAlerta),
-                border = androidx.compose.foundation.BorderStroke(1.dp, RojoAlerta)
-            ) {
-                Icon(Icons.Filled.Delete, null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(6.dp))
-                Text("Eliminar cultivo")
-            }
-        }
-    }
-}
-
-@Composable
-private fun DetalleSeccion(titulo: String, content: @Composable () -> Unit) {
-    Text(titulo, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = VerdeBosque)
-    Spacer(Modifier.height(4.dp))
-    content()
-    Spacer(Modifier.height(14.dp))
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

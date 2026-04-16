@@ -32,6 +32,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.agroscanai.R
 import com.example.agroscanai.data.model.Cultivo
 import com.example.agroscanai.data.model.EstadoCultivo
+import com.example.agroscanai.ui.components.AgroBottomBar
+import com.example.agroscanai.ui.components.PaginaActual
 import com.example.agroscanai.ui.theme.*
 import com.example.agroscanai.ui.viewmodel.CultivosViewModel
 import com.example.agroscanai.ui.viewmodel.UltimoEscaneoData
@@ -97,6 +99,7 @@ fun DashboardSaludScreen(
     onHomeClick: () -> Unit = {},
     onBackClick: () -> Unit = {},
     onNotificacionesClick: () -> Unit = {},
+    onPerfilClick: () -> Unit = {},
     cultivosViewModel: CultivosViewModel = viewModel()
 ) {
     val cultivos        by cultivosViewModel.cultivos.collectAsState()
@@ -128,10 +131,20 @@ fun DashboardSaludScreen(
     val k = ultimoEscaneo?.nivelPotasio?.takeIf    { it > 0f } ?: cultivo.potasio
     val humedad = ultimoEscaneo?.humedadSuelo?.takeIf { it > 0f } ?: cultivo.humedadPromedio
 
+    Scaffold(
+        bottomBar = {
+            AgroBottomBar(
+                onHomeClick = onHomeClick,
+                onNotificacionesClick = onNotificacionesClick,
+                onPerfilClick = onPerfilClick
+            )
+        }
+    ) { innerPadding ->
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF5F7F5))
+            .padding(innerPadding)
             .verticalScroll(rememberScrollState())
     ) {
         // ── Header ──────────────────────────────────────────────────────────
@@ -147,24 +160,12 @@ fun DashboardSaludScreen(
                 Icon(Icons.Filled.ArrowBack, contentDescription = "Volver", tint = VerdeBosque)
             }
             Spacer(Modifier.width(6.dp))
-            Row(
-                modifier = Modifier
-                    .background(Color(0xFFF0F4F0), RoundedCornerShape(24.dp))
-                    .padding(horizontal = 12.dp, vertical = 7.dp)
-                    .weight(1f),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(Icons.Filled.Search, contentDescription = null, tint = GrisMedio, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.width(6.dp))
-                Text("Dashboard de Salud", fontSize = 13.sp, color = GrisMedio)
-            }
-            Spacer(Modifier.width(6.dp))
-            IconButton(onClick = onHomeClick, modifier = Modifier.size(36.dp)) {
-                Icon(Icons.Filled.Home, contentDescription = "Inicio", tint = VerdeBosque)
-            }
-            IconButton(onClick = onNotificacionesClick, modifier = Modifier.size(36.dp)) {
-                Icon(Icons.Filled.Notifications, contentDescription = "Notificaciones", tint = VerdeBosque)
-            }
+            Text(
+                text = "Dashboard de Salud",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = VerdeBosque
+            )
         }
 
         // ── Lote seleccionado ────────────────────────────────────────────────
@@ -365,7 +366,8 @@ fun DashboardSaludScreen(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 20.dp)
         )
-    }
+    } // end Column
+    } // end Scaffold content
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

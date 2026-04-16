@@ -1,16 +1,29 @@
 package com.example.agroscanai.data.model
 
 data class Tarea(
-    val id: Int = 0,
-    val cultivoId: Int = 0,
+    val id: String = "",
+    val cultivoId: String = "",
+    val cultivoNombre: String = "",
     val titulo: String = "",
     val descripcion: String = "",
     val fecha: String = "",
     val hora: String = "",
-    val tipo: TipoTarea = TipoTarea.MANUAL,
+    val tipo: String = TipoTarea.MANUAL.name,
     val completada: Boolean = false,
-    val prioridad: PrioridadTarea = PrioridadTarea.MEDIA
-)
+    val prioridad: String = PrioridadTarea.MEDIA.name
+) {
+    fun tipoEnum(): TipoTarea = try {
+        TipoTarea.valueOf(tipo)
+    } catch (e: Exception) {
+        TipoTarea.MANUAL
+    }
+
+    fun prioridadEnum(): PrioridadTarea = try {
+        PrioridadTarea.valueOf(prioridad)
+    } catch (e: Exception) {
+        PrioridadTarea.MEDIA
+    }
+}
 
 enum class TipoTarea {
     MANUAL,
@@ -19,7 +32,8 @@ enum class TipoTarea {
     FUMIGACION,
     COSECHA,
     ESCANEO,
-    RECOMENDACION
+    RECOMENDACION,
+    PODA
 }
 
 enum class PrioridadTarea {

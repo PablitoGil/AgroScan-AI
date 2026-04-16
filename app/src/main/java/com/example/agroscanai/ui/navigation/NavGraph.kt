@@ -5,65 +5,70 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.agroscanai.ui.screens.BienvenidaScreen
-import com.example.agroscanai.ui.screens.DashboardSaludScreen
-import com.example.agroscanai.ui.screens.EscanearParcelaScreen
-import com.example.agroscanai.ui.screens.HomeScreen
-import com.example.agroscanai.ui.screens.LoginScreen
-import com.example.agroscanai.ui.screens.MapaLotesScreen
-import com.example.agroscanai.ui.screens.MisCultivosScreen
-import com.example.agroscanai.ui.screens.OnboardingScreen
-import com.example.agroscanai.ui.screens.RecuperarContrasenaScreen
-import com.example.agroscanai.ui.screens.RegisterScreen
-import com.example.agroscanai.ui.screens.SeleccionarCultivoDashboard
-import com.example.agroscanai.ui.screens.SplashScreen
-import com.example.agroscanai.ui.screens.VerificacionEmailScreen
-import com.example.agroscanai.ui.screens.WelcomeScreen
+import com.example.agroscanai.ui.screens.*
 import com.example.agroscanai.ui.viewmodel.AuthViewModel
+import com.example.agroscanai.ui.viewmodel.CalendarioViewModel
 import com.example.agroscanai.ui.viewmodel.CultivosViewModel
 import com.example.agroscanai.ui.viewmodel.DroneViewModel
+import com.example.agroscanai.ui.viewmodel.PerfilViewModel
 
 object Routes {
-    const val SPLASH = "splash"
-    const val ONBOARDING = "onboarding"
-    const val WELCOME = "welcome"
-    const val LOGIN = "login"
+    const val SPLASH               = "splash"
+    const val ONBOARDING           = "onboarding"
+    const val WELCOME              = "welcome"
+    const val LOGIN                = "login"
     const val RECUPERAR_CONTRASENA = "recuperar_contrasena"
-    const val REGISTER = "register"
-    const val VERIFICACION_EMAIL = "verificacion_email/{email}"
-    const val BIENVENIDA = "bienvenida/{nombre}"
-    const val HOME = "home"
-    const val MIS_CULTIVOS = "mis_cultivos"
-    const val MAPA_LOTES = "mapa_lotes"
-    const val DASHBOARD_SALUD = "dashboard_salud"
+    const val REGISTER             = "register"
+    const val VERIFICACION_EMAIL   = "verificacion_email/{email}"
+    const val BIENVENIDA           = "bienvenida/{nombre}"
+    const val HOME                 = "home"
+    const val MIS_CULTIVOS         = "mis_cultivos"
+    const val MAPA_LOTES           = "mapa_lotes"
+    const val DASHBOARD_SALUD         = "dashboard_salud"
     const val DASHBOARD_SALUD_DETALLE = "dashboard_salud_detalle/{cultivoId}"
-    const val REPORTES_IA = "reportes_ia"
-    const val CLIMA = "clima"
-    const val CALENDARIO = "calendario"
-    const val PRECIOS = "precios"
-    const val PERFIL = "perfil"
-    const val NOTIFICACIONES = "notificaciones"
-    const val ESCANEO = "escaneo"
-    const val DETALLE_CULTIVO = "detalle_cultivo/{cultivoId}"
-    const val DETALLE_ESCANEO = "detalle_escaneo/{escaneoId}"
+    const val REPORTES_IA          = "reportes_ia"
+    const val CLIMA                = "clima"
+    const val CALENDARIO           = "calendario"
+    const val PRECIOS              = "precios"
+    const val ESCANEO              = "escaneo"
+    const val NOTIFICACIONES       = "notificaciones"
+    const val DETALLE_CULTIVO      = "detalle_cultivo/{cultivoId}"
+    const val DETALLE_ESCANEO      = "detalle_escaneo/{escaneoId}"
 
-    fun verificacionEmail(email: String) = "verificacion_email/$email"
-    fun bienvenida(nombre: String) = "bienvenida/${nombre.ifBlank { "Usuario" }}"
-    fun detallesCultivo(cultivoId: Int) = "detalle_cultivo/$cultivoId"
-    fun detallesEscaneo(escaneoId: Int) = "detalle_escaneo/$escaneoId"
-    fun dashboardSaludDetalle(cultivoId: String) = "dashboard_salud_detalle/$cultivoId"
+    // Perfil y sub-secciones
+    const val PERFIL               = "perfil"
+    const val PERFIL_EDITAR        = "perfil_editar"
+    const val PERFIL_CONFIGURACION = "perfil_configuracion"
+    const val PERFIL_INFO          = "perfil_info/{tipo}"
+
+    fun verificacionEmail(email: String)    = "verificacion_email/$email"
+    fun bienvenida(nombre: String)          = "bienvenida/${nombre.ifBlank { "Usuario" }}"
+    fun detallesCultivo(cultivoId: String)  = "detalle_cultivo/$cultivoId"
+    fun detallesEscaneo(escaneoId: Int)     = "detalle_escaneo/$escaneoId"
+    fun dashboardSaludDetalle(id: String)   = "dashboard_salud_detalle/$id"
+    fun perfilInfo(tipo: String)            = "perfil_info/$tipo"
 }
 
 @Composable
 fun NavGraph(navController: NavHostController) {
-    val authViewModel: AuthViewModel = viewModel()
-    val droneViewModel: DroneViewModel = viewModel()
-    val cultivosViewModel: CultivosViewModel = viewModel()
+    val authViewModel: AuthViewModel           = viewModel()
+    val droneViewModel: DroneViewModel         = viewModel()
+    val cultivosViewModel: CultivosViewModel   = viewModel()
+    val perfilViewModel: PerfilViewModel       = viewModel()
+    val calendarioViewModel: CalendarioViewModel = viewModel()
 
-    NavHost(
-        navController = navController,
-        startDestination = Routes.SPLASH
-    ) {
+    fun goNotificaciones() = navController.navigate(Routes.NOTIFICACIONES)
+
+    fun signOut() {
+        navController.navigate(Routes.WELCOME) {
+            popUpTo(0) { inclusive = true }
+            launchSingleTop = true
+        }
+    }
+
+    NavHost(navController = navController, startDestination = Routes.SPLASH) {
+
+        // ── Auth ──────────────────────────────────────────────────────────────
         composable(Routes.SPLASH) {
             SplashScreen(
                 onFinished = {
@@ -86,21 +91,21 @@ fun NavGraph(navController: NavHostController) {
 
         composable(Routes.WELCOME) {
             WelcomeScreen(
-                onLoginClick = { navController.navigate(Routes.LOGIN) },
+                onLoginClick    = { navController.navigate(Routes.LOGIN) },
                 onRegisterClick = { navController.navigate(Routes.REGISTER) }
             )
         }
 
         composable(Routes.LOGIN) {
             LoginScreen(
-                onBackClick = { navController.popBackStack() },
+                onBackClick    = { navController.popBackStack() },
                 onLoginSuccess = { nombre ->
                     navController.navigate(Routes.bienvenida(nombre)) {
                         popUpTo(Routes.WELCOME) { inclusive = true }
                     }
                 },
                 onForgotPassword = { navController.navigate(Routes.RECUPERAR_CONTRASENA) },
-                onRegisterClick = {
+                onRegisterClick  = {
                     navController.navigate(Routes.REGISTER) {
                         popUpTo(Routes.LOGIN) { inclusive = true }
                     }
@@ -111,18 +116,16 @@ fun NavGraph(navController: NavHostController) {
 
         composable(Routes.RECUPERAR_CONTRASENA) {
             RecuperarContrasenaScreen(
-                onBackClick = { navController.popBackStack() },
+                onBackClick   = { navController.popBackStack() },
                 authViewModel = authViewModel
             )
         }
 
         composable(Routes.REGISTER) {
             RegisterScreen(
-                onBackClick = { navController.popBackStack() },
-                onVerificationSent = { email ->
-                    navController.navigate(Routes.verificacionEmail(email))
-                },
-                onRegisterSuccess = { nombre ->
+                onBackClick        = { navController.popBackStack() },
+                onVerificationSent = { email -> navController.navigate(Routes.verificacionEmail(email)) },
+                onRegisterSuccess  = { nombre ->
                     navController.navigate(Routes.bienvenida(nombre)) {
                         popUpTo(Routes.WELCOME) { inclusive = true }
                     }
@@ -134,13 +137,13 @@ fun NavGraph(navController: NavHostController) {
         composable(Routes.VERIFICACION_EMAIL) { backStackEntry ->
             val email = backStackEntry.arguments?.getString("email") ?: ""
             VerificacionEmailScreen(
-                email = email,
+                email       = email,
                 onBackClick = {
                     navController.navigate(Routes.REGISTER) {
                         popUpTo(Routes.REGISTER) { inclusive = true }
                     }
                 },
-                onVerified = { nombre ->
+                onVerified    = { nombre ->
                     navController.navigate(Routes.bienvenida(nombre)) {
                         popUpTo(Routes.WELCOME) { inclusive = true }
                     }
@@ -153,7 +156,7 @@ fun NavGraph(navController: NavHostController) {
             val nombre = backStackEntry.arguments?.getString("nombre") ?: ""
             BienvenidaScreen(
                 nombreUsuario = nombre,
-                onFinished = {
+                onFinished    = {
                     navController.navigate(Routes.HOME) {
                         popUpTo(Routes.BIENVENIDA) { inclusive = true }
                     }
@@ -161,64 +164,182 @@ fun NavGraph(navController: NavHostController) {
             )
         }
 
-        composable(Routes.HOME) { backStackEntry ->
-            val nombre = navController.previousBackStackEntry
-                ?.arguments?.getString("nombre") ?: ""
+        // ── Home y módulos principales ────────────────────────────────────────
+        composable(Routes.HOME) {
             HomeScreen(
-                nombreUsuario = nombre,
-                onMenuItemClick = { route -> navController.navigate(route) },
-                onNotificacionesClick = { navController.navigate(Routes.NOTIFICACIONES) },
-                onPerfilClick = { navController.navigate(Routes.PERFIL) }
+                onMenuItemClick       = { route -> navController.navigate(route) },
+                onNotificacionesClick = { goNotificaciones() },
+                onPerfilClick         = { navController.navigate(Routes.PERFIL) }
             )
         }
 
         composable(Routes.MAPA_LOTES) {
             MapaLotesScreen(
-                onHomeClick = { navController.navigate(Routes.HOME) },
-                onNotificacionesClick = { navController.navigate(Routes.NOTIFICACIONES) },
-                onPerfilClick = { navController.navigate(Routes.PERFIL) },
-                cultivosViewModel = cultivosViewModel
+                onHomeClick           = { navController.navigate(Routes.HOME) },
+                onNotificacionesClick = { goNotificaciones() },
+                onPerfilClick         = { navController.navigate(Routes.PERFIL) },
+                cultivosViewModel     = cultivosViewModel
             )
         }
 
         composable(Routes.MIS_CULTIVOS) {
             MisCultivosScreen(
-                onHomeClick = { navController.navigate(Routes.HOME) },
-                onNotificacionesClick = { navController.navigate(Routes.NOTIFICACIONES) },
-                onPerfilClick = { navController.navigate(Routes.PERFIL) },
-                cultivosViewModel = cultivosViewModel
+                onHomeClick              = { navController.navigate(Routes.HOME) },
+                onNotificacionesClick    = { goNotificaciones() },
+                onPerfilClick            = { navController.navigate(Routes.PERFIL) },
+                onDetalleCultivoClick    = { id -> navController.navigate(Routes.detallesCultivo(id)) },
+                cultivosViewModel        = cultivosViewModel
             )
         }
 
         composable(Routes.ESCANEO) {
             EscanearParcelaScreen(
-                onHomeClick = { navController.navigate(Routes.HOME) },
-                onNotificacionesClick = { navController.navigate(Routes.NOTIFICACIONES) },
-                onPerfilClick = { navController.navigate(Routes.PERFIL) },
-                droneViewModel = droneViewModel,
-                cultivosViewModel = cultivosViewModel
+                onHomeClick           = { navController.navigate(Routes.HOME) },
+                onNotificacionesClick = { goNotificaciones() },
+                onPerfilClick         = { navController.navigate(Routes.PERFIL) },
+                droneViewModel        = droneViewModel,
+                cultivosViewModel     = cultivosViewModel
             )
         }
 
         composable(Routes.DASHBOARD_SALUD) {
             SeleccionarCultivoDashboard(
-                onCultivoSelected = { cultivoId ->
-                    navController.navigate(Routes.dashboardSaludDetalle(cultivoId))
-                },
-                onHomeClick = { navController.navigate(Routes.HOME) },
-                onBackClick = { navController.popBackStack() },
-                cultivosViewModel = cultivosViewModel
+                onCultivoSelected     = { cultivoId -> navController.navigate(Routes.dashboardSaludDetalle(cultivoId)) },
+                onHomeClick           = { navController.navigate(Routes.HOME) },
+                onNotificacionesClick = { goNotificaciones() },
+                onBackClick           = { navController.popBackStack() },
+                onPerfilClick         = { navController.navigate(Routes.PERFIL) },
+                cultivosViewModel     = cultivosViewModel
             )
         }
 
         composable(Routes.DASHBOARD_SALUD_DETALLE) { backStackEntry ->
             val cultivoId = backStackEntry.arguments?.getString("cultivoId") ?: ""
             DashboardSaludScreen(
-                cultivoId = cultivoId,
-                onHomeClick = { navController.navigate(Routes.HOME) },
-                onBackClick = { navController.popBackStack() },
-                onNotificacionesClick = { navController.navigate(Routes.NOTIFICACIONES) },
+                cultivoId             = cultivoId,
+                onHomeClick           = { navController.navigate(Routes.HOME) },
+                onBackClick           = { navController.popBackStack() },
+                onNotificacionesClick = { goNotificaciones() },
+                onPerfilClick         = { navController.navigate(Routes.PERFIL) },
+                cultivosViewModel     = cultivosViewModel
+            )
+        }
+
+        composable(Routes.DETALLE_CULTIVO) { backStackEntry ->
+            val cultivoId = backStackEntry.arguments?.getString("cultivoId") ?: ""
+            DetalleCultivoScreen(
+                cultivoId             = cultivoId,
+                onBackClick           = { navController.popBackStack() },
+                onNotificacionesClick = { goNotificaciones() },
+                onCultivoEliminado    = { navController.popBackStack() },
+                onHomeClick           = { navController.navigate(Routes.HOME) },
+                onPerfilClick         = { navController.navigate(Routes.PERFIL) },
+                cultivosViewModel     = cultivosViewModel
+            )
+        }
+
+        composable(Routes.NOTIFICACIONES) {
+            NotificacionesScreen(
+                onBackClick       = { navController.popBackStack() },
+                onHomeClick       = { navController.navigate(Routes.HOME) },
+                onPerfilClick     = { navController.navigate(Routes.PERFIL) },
                 cultivosViewModel = cultivosViewModel
+            )
+        }
+
+        composable(Routes.REPORTES_IA) {
+            ReportesIAScreen(
+                onBackClick           = { navController.popBackStack() },
+                onHomeClick           = { navController.navigate(Routes.HOME) },
+                onNotificacionesClick = { goNotificaciones() },
+                onPerfilClick         = { navController.navigate(Routes.PERFIL) },
+                cultivosViewModel     = cultivosViewModel
+            )
+        }
+
+        composable(Routes.CALENDARIO) {
+            CalendarioScreen(
+                onBackClick           = { navController.popBackStack() },
+                onHomeClick           = { navController.navigate(Routes.HOME) },
+                onNotificacionesClick = { goNotificaciones() },
+                onPerfilClick         = { navController.navigate(Routes.PERFIL) },
+                cultivosViewModel     = cultivosViewModel,
+                calendarioViewModel   = calendarioViewModel
+            )
+        }
+
+        composable(Routes.CLIMA) {
+            ClimaScreen(
+                onBackClick           = { navController.popBackStack() },
+                onHomeClick           = { navController.navigate(Routes.HOME) },
+                onNotificacionesClick = { goNotificaciones() },
+                onPerfilClick         = { navController.navigate(Routes.PERFIL) }
+            )
+        }
+
+        composable(Routes.PRECIOS) {
+            PreciosScreen(
+                onBackClick           = { navController.popBackStack() },
+                onHomeClick           = { navController.navigate(Routes.HOME) },
+                onNotificacionesClick = { goNotificaciones() },
+                onPerfilClick         = { navController.navigate(Routes.PERFIL) }
+            )
+        }
+
+        // ── Perfil ────────────────────────────────────────────────────────────
+        composable(Routes.PERFIL) {
+            PerfilScreen(
+                onBackClick           = { navController.popBackStack() },
+                onHomeClick           = { navController.navigate(Routes.HOME) },
+                onNotificacionesClick = { goNotificaciones() },
+                onEditarPerfil        = { navController.navigate(Routes.PERFIL_EDITAR) },
+                onConfiguracion       = { navController.navigate(Routes.PERFIL_CONFIGURACION) },
+                onAcerca              = { navController.navigate(Routes.perfilInfo("acerca")) },
+                onTerminos            = { navController.navigate(Routes.perfilInfo("terminos")) },
+                onPrivacidad          = { navController.navigate(Routes.perfilInfo("privacidad")) },
+                onCookies             = { navController.navigate(Routes.perfilInfo("cookies")) },
+                onAyuda               = { navController.navigate(Routes.perfilInfo("ayuda")) },
+                onSignOut             = { signOut() },
+                perfilViewModel       = perfilViewModel,
+                cultivosViewModel     = cultivosViewModel
+            )
+        }
+
+        composable(Routes.PERFIL_EDITAR) {
+            EditarPerfilScreen(
+                onBackClick           = { navController.popBackStack() },
+                onNotificacionesClick = { goNotificaciones() },
+                onHomeClick           = { navController.navigate(Routes.HOME) },
+                onPerfilClick         = { navController.navigate(Routes.PERFIL) },
+                perfilViewModel       = perfilViewModel
+            )
+        }
+
+        composable(Routes.PERFIL_CONFIGURACION) {
+            ConfiguracionScreen(
+                onBackClick           = { navController.popBackStack() },
+                onNotificacionesClick = { goNotificaciones() },
+                onHomeClick           = { navController.navigate(Routes.HOME) },
+                onPerfilClick         = { navController.navigate(Routes.PERFIL) },
+                perfilViewModel       = perfilViewModel
+            )
+        }
+
+        composable(Routes.PERFIL_INFO) { backStackEntry ->
+            val tipo = backStackEntry.arguments?.getString("tipo") ?: "acerca"
+            val tipoEnum = when (tipo) {
+                "terminos"   -> TipoInfoLegal.TERMINOS
+                "privacidad" -> TipoInfoLegal.PRIVACIDAD
+                "cookies"    -> TipoInfoLegal.COOKIES
+                "ayuda"      -> TipoInfoLegal.AYUDA
+                else         -> TipoInfoLegal.ACERCA
+            }
+            InfoLegalScreen(
+                tipo                  = tipoEnum,
+                onBackClick           = { navController.popBackStack() },
+                onNotificacionesClick = { goNotificaciones() },
+                onHomeClick           = { navController.navigate(Routes.HOME) },
+                onPerfilClick         = { navController.navigate(Routes.PERFIL) }
             )
         }
     }

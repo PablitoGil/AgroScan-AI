@@ -5,7 +5,8 @@
       "Bash(find:*)",
       "Bash(xargs grep:*)",
       "Bash(grep -r \"TODO\\\\|FIXME\" /d/AndroidStudioProjects/AndroidStudioProjects/AgroScanAI/app/src/main/java/*.kt)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(grep \"\\\\.kt$\")"
     ]
   }
 }

@@ -33,6 +33,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.agroscanai.R
 import com.example.agroscanai.data.model.Cultivo
 import com.example.agroscanai.data.model.EstadoCultivo
+import com.example.agroscanai.ui.components.AgroBottomBar
+import com.example.agroscanai.ui.components.PaginaActual
 import com.example.agroscanai.ui.theme.*
 import com.example.agroscanai.ui.viewmodel.CultivosViewModel
 import com.example.agroscanai.ui.viewmodel.DroneEstado
@@ -77,7 +79,16 @@ fun EscanearParcelaScreen(
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().background(Color.White)) {
+    Scaffold(
+        bottomBar = {
+            AgroBottomBar(
+                onHomeClick = onHomeClick,
+                onNotificacionesClick = onNotificacionesClick,
+                onPerfilClick = onPerfilClick
+            )
+        }
+    ) { innerPadding ->
+    Column(modifier = Modifier.fillMaxSize().background(Color.White).padding(innerPadding)) {
 
         Row(
             modifier = Modifier.fillMaxWidth().background(Color.White).shadow(2.dp)
@@ -103,48 +114,6 @@ fun EscanearParcelaScreen(
                     modifier = Modifier.size(32.dp))
                 Text("AgroScan AI", fontSize = 8.sp, fontWeight = FontWeight.Bold,
                     color = VerdeBosque, lineHeight = 10.sp)
-            }
-            Spacer(Modifier.width(10.dp))
-            Box(
-                modifier = Modifier.weight(1f).height(40.dp)
-                    .clip(RoundedCornerShape(20.dp)).background(Color(0xFFEEF2EE))
-                    .padding(horizontal = 12.dp),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Search, null, tint = GrisMedio, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("Buscar en AgroScan...", fontSize = 13.sp, color = GrisMedio)
-                }
-            }
-            Spacer(Modifier.width(10.dp))
-            Box(
-                modifier = Modifier.size(38.dp).clip(CircleShape)
-                    .background(VerdeBosque).clickable { onPerfilClick() },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Filled.Person, "Perfil", tint = Color.White, modifier = Modifier.size(22.dp))
-            }
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth().background(Color.White)
-                .padding(horizontal = 20.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(Icons.Filled.Home, "Inicio", tint = VerdeEsmeralda,
-                modifier = Modifier.size(28.dp).clickable { onHomeClick() })
-            Box {
-                Icon(Icons.Filled.Notifications, "Notificaciones", tint = GrisMedio,
-                    modifier = Modifier.size(28.dp).clickable { onNotificacionesClick() })
-                Box(
-                    modifier = Modifier.size(16.dp).clip(CircleShape)
-                        .background(Color(0xFFE53935)).align(Alignment.TopEnd),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("4", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                }
             }
         }
 
@@ -201,21 +170,22 @@ fun EscanearParcelaScreen(
                 )
             }
         }
-    }
 
-    if (mostrarDialogoConexion) {
-        DroneConnectionDialog(
-            onDismiss = { mostrarDialogoConexion = false },
-            onConectarWifi = {
-                mostrarDialogoConexion = false
-                droneViewModel.buscarYConectarDron()
-            },
-            onSimular = {
-                mostrarDialogoConexion = false
-                droneViewModel.conectarModoSimulacion()
-            }
-        )
-    }
+        if (mostrarDialogoConexion) {
+            DroneConnectionDialog(
+                onDismiss = { mostrarDialogoConexion = false },
+                onConectarWifi = {
+                    mostrarDialogoConexion = false
+                    droneViewModel.buscarYConectarDron()
+                },
+                onSimular = {
+                    mostrarDialogoConexion = false
+                    droneViewModel.conectarModoSimulacion()
+                }
+            )
+        }
+    } // end Column
+    } // end Scaffold content
 }
 
 @Composable

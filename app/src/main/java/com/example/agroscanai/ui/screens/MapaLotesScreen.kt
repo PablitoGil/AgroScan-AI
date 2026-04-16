@@ -36,6 +36,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.agroscanai.R
 import com.example.agroscanai.data.model.Cultivo
 import com.example.agroscanai.data.model.EstadoCultivo
+import com.example.agroscanai.ui.components.AgroBottomBar
+import com.example.agroscanai.ui.components.PaginaActual
 import com.example.agroscanai.ui.theme.*
 import com.example.agroscanai.ui.viewmodel.CultivosViewModel
 
@@ -54,7 +56,18 @@ fun MapaLotesScreen(
     var paso                by remember { mutableStateOf(PasoMapa.SELECCIONAR) }
     var cultivoSeleccionado by remember { mutableStateOf<Cultivo?>(null) }
 
-    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F7F5))) {
+    Scaffold(
+        containerColor = Color(0xFFF5F7F5),
+        bottomBar = {
+            AgroBottomBar(
+                onHomeClick           = onHomeClick,
+                onNotificacionesClick = onNotificacionesClick,
+                onPerfilClick         = onPerfilClick,
+                paginaActual          = PaginaActual.NINGUNA
+            )
+        }
+    ) { innerPadding ->
+    Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
 
         // ── Header ──────────────────────────────────────────────────────────
         Row(
@@ -88,52 +101,6 @@ fun MapaLotesScreen(
                 )
                 Text("AgroScan AI", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = VerdeBosque)
             }
-            Spacer(Modifier.width(10.dp))
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(40.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(Color(0xFFEEF2EE))
-                    .padding(horizontal = 12.dp),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Search, null, tint = GrisMedio, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("¿Te apetece regar hoy?", fontSize = 13.sp, color = GrisMedio)
-                }
-            }
-            Spacer(Modifier.width(10.dp))
-            Box(
-                modifier = Modifier
-                    .size(38.dp)
-                    .clip(CircleShape)
-                    .background(VerdeBosque)
-                    .clickable { onPerfilClick() },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Filled.Person, null, tint = Color.White, modifier = Modifier.size(22.dp))
-            }
-        }
-
-        // ── Nav bar ─────────────────────────────────────────────────────────
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color.White)
-                .padding(horizontal = 20.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                Icons.Filled.Home, "Inicio", tint = GrisMedio,
-                modifier = Modifier.size(28.dp).clickable { onHomeClick() }
-            )
-            Icon(
-                Icons.Filled.Notifications, "Notificaciones", tint = GrisMedio,
-                modifier = Modifier.size(28.dp).clickable { onNotificacionesClick() }
-            )
         }
 
         HorizontalDivider(color = Color(0xFFE8ECE8))
@@ -153,6 +120,7 @@ fun MapaLotesScreen(
             )
         }
     }
+    } // end Scaffold
 }
 
 // ────────────────────────────────────────────────────────────────────────────
