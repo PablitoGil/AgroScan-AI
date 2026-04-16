@@ -2,4 +2,12 @@
 <resources>
 
     <style name="Theme.AgroScanAI" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <style name="Theme.AgroScanAI.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/verde_splash</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/logo_agroscan</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/verde_splash</item>
+        <item name="postSplashScreenTheme">@style/Theme.AgroScanAI</item>
+    </style>
+
 </resources>

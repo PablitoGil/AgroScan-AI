@@ -1,8 +1,15 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     id("com.google.gms.google-services")
 }
+
+// Lee la API key de local.properties
+val localProps = Properties()
+rootProject.file("local.properties").takeIf { it.exists() }
+    ?.inputStream()?.use { localProps.load(it) }
 
 android {
     namespace = "com.example.agroscanai"
@@ -66,6 +73,12 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+    // Splash Screen API
+    implementation("androidx.core:core-splashscreen:1.0.1")
+
+    // OpenStreetMap – OSMDroid (sin API key, completamente gratis)
+    implementation("org.osmdroid:osmdroid-android:6.1.20")
 
     // Location (GPS)
     implementation("com.google.android.gms:play-services-location:21.3.0")

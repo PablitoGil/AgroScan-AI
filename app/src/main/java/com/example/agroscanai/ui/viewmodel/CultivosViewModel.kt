@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.example.agroscanai.utils.NotificacionHelper
 import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -44,7 +45,7 @@ class CultivosViewModel(application: Application) : AndroidViewModel(application
     private val db   = Firebase.firestore
     private val auth = Firebase.auth
     private val gson = Gson()
-    private val prefs = application.getSharedPreferences("agroscan_cultivos", Context.MODE_PRIVATE)
+    private val prefs = application.getSharedPreferences("agroscan_v2", Context.MODE_PRIVATE)
 
     private val _cultivos   = MutableStateFlow<List<Cultivo>>(emptyList())
     val cultivos: StateFlow<List<Cultivo>> = _cultivos.asStateFlow()
@@ -63,9 +64,88 @@ class CultivosViewModel(application: Application) : AndroidViewModel(application
 
     private var snapshotListener: ListenerRegistration? = null
 
-    private val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
-        if (firebaseAuth.currentUser != null) {
-            cargarDesdeLocal()
+    // ── SharedPreferences cache ──────────────────────────────────────────────
+
+    private fun clave() = "cultivos_${userId()}"
+
+    /** Escribe la lista al disco. Siempre sincrónico (commit). */
+    private fun escribirLocal(lista: List<Cultivo>) {
+        val uid = userId()
+        if (uid.isEmpty() || lista.isEmpty()) return
+        prefs.edit().putString(clave(), gson.toJson(lista)).commit()
+    }
+
+    /** Lee la lista del disco. Devuelve lista vacía si no hay nada. */
+    private fun leerLocal(): List<Cultivo> {
+        val uid = userId()
+        if (uid.isEmpty()) return emptyList()
+        val json = prefs.getString(clave(), null) ?: return emptyList()
+        return try {
+            val tipo = object : TypeToken<List<Cultivo>>() {}.type
+            gson.fromJson(json, tipo) ?: emptyList()
+        } catch (_: Exception) { emptyList() }
+    }
+
+    /** Decide qué versión de un cultivo conservar: la que tiene el escaneo más reciente. */
+    private fun tienEscaneo(c: Cultivo) =
+        c.ultimoEscaneo.isNotBlank() && c.ultimoEscaneo != "Sin escaneos aún"
+
+    private fun copiarEscaneoLocal(fc: Cultivo, lc: Cultivo) = fc.copy(
+        estado           = lc.estado,
+        ultimoEscaneo    = lc.ultimoEscaneo,
+        humedadPromedio  = lc.humedadPromedio,
+        nitrogenio       = lc.nitrogenio,
+        fosforo          = lc.fosforo,
+        potasio          = lc.potasio,
+        plagasDetectadas = lc.plagasDetectadas,
+        indiceSalud      = lc.indiceSalud
+    )
+
+    private fun mergeListas(
+        firestore: List<Cultivo>,
+        local: List<Cultivo>
+    ): List<Cultivo> {
+        // Si Firestore está vacío, devolver local directamente (sin borrar datos)
+        if (firestore.isEmpty()) return local
+
+        val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+        val firestoreIds = firestore.map { it.id }.toSet()
+
+        val merged = firestore.map { fc ->
+            val lc = local.find { it.id == fc.id } ?: return@map fc
+            when {
+                // local tiene escaneo, firestore no → conservar local
+                tienEscaneo(lc) && !tienEscaneo(fc) -> copiarEscaneoLocal(fc, lc)
+                // ambos tienen escaneo → el más reciente gana
+                tienEscaneo(lc) && tienEscaneo(fc) -> {
+                    val fechaL = runCatching { sdf.parse(lc.ultimoEscaneo) }.getOrNull()
+                    val fechaF = runCatching { sdf.parse(fc.ultimoEscaneo) }.getOrNull()
+                    if (fechaL != null && fechaF != null && fechaL > fechaF)
+                        copiarEscaneoLocal(fc, lc)
+                    else fc
+                }
+                else -> fc
+            }
+        }.toMutableList()
+
+        // Incluir cultivos que sólo están en local (no sincronizados a Firestore todavía)
+        local.filter { it.id !in firestoreIds }.forEach { merged.add(it) }
+
+        return merged
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
+
+    private fun userId() = auth.currentUser?.uid ?: ""
+
+    private fun cultivosRef() =
+        db.collection("users").document(userId()).collection("cultivos")
+
+    private val authStateListener = FirebaseAuth.AuthStateListener { fa ->
+        if (fa.currentUser != null) {
+            // Carga local primero para que la UI no quede en blanco
+            val local = leerLocal()
+            if (local.isNotEmpty()) _cultivos.value = local
             if (snapshotListener == null) cargarCultivos()
         } else {
             snapshotListener?.remove()
@@ -74,37 +154,13 @@ class CultivosViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    private fun userId() = auth.currentUser?.uid ?: ""
-
-    private fun cultivosRef() =
-        db.collection("users").document(userId()).collection("cultivos")
-
-    // ── Caché local ──────────────────────────────────────────────────────────
-
-    private fun claveLocal() = "cultivos_${userId()}"
-
-    private fun guardarEnLocal(lista: List<Cultivo>) {
-        if (userId().isEmpty()) return
-        prefs.edit().putString(claveLocal(), gson.toJson(lista)).apply()
-    }
-
-    private fun cargarDesdeLocal() {
-        val uid = userId()
-        if (uid.isEmpty()) return
-        val json = prefs.getString(claveLocal(), null) ?: return
-        try {
-            val tipo = object : TypeToken<List<Cultivo>>() {}.type
-            val lista: List<Cultivo> = gson.fromJson(json, tipo)
-            if (lista.isNotEmpty()) _cultivos.value = lista
-        } catch (_: Exception) {}
-    }
-
-    // ────────────────────────────────────────────────────────────────────────
-
     init {
-        cargarDesdeLocal()
         auth.addAuthStateListener(authStateListener)
-        if (auth.currentUser != null) cargarCultivos()
+        if (auth.currentUser != null) {
+            val local = leerLocal()
+            if (local.isNotEmpty()) _cultivos.value = local
+            cargarCultivos()
+        }
     }
 
     fun cargarCultivos() {
@@ -114,8 +170,9 @@ class CultivosViewModel(application: Application) : AndroidViewModel(application
         _isLoading.value = true
         snapshotListener = cultivosRef().addSnapshotListener { snapshot, e ->
             _isLoading.value = false
-            if (e != null) { _error.value = "Error al cargar cultivos"; return@addSnapshotListener }
-            val lista = snapshot?.documents?.map { doc ->
+            if (e != null) return@addSnapshotListener
+
+            val firestoreLista = snapshot?.documents?.mapNotNull { doc ->
                 Cultivo(
                     id               = doc.id,
                     nombre           = doc.getString("nombre")           ?: "",
@@ -134,8 +191,13 @@ class CultivosViewModel(application: Application) : AndroidViewModel(application
                     ultimoEscaneo    = doc.getString("ultimoEscaneo")    ?: ""
                 )
             } ?: emptyList()
-            _cultivos.value = lista
-            guardarEnLocal(lista)   // ← guarda en disco cada vez que Firestore responde
+
+            // Merge: los datos locales de escaneo nunca son sobreescritos por Firestore
+            val local = leerLocal()
+            val merged = mergeListas(firestoreLista, local)
+
+            _cultivos.value = if (merged.isNotEmpty()) merged else _cultivos.value
+            if (merged.isNotEmpty()) escribirLocal(merged)
         }
     }
 
@@ -173,6 +235,10 @@ class CultivosViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             try {
                 cultivosRef().document(cultivoId).delete().await()
+                // Eliminar también del caché local
+                val actualizada = _cultivos.value.filter { it.id != cultivoId }
+                _cultivos.value = actualizada
+                escribirLocal(actualizada)
             } catch (e: Exception) {
                 _error.value = "No se pudo eliminar el cultivo."
             }
@@ -183,35 +249,76 @@ class CultivosViewModel(application: Application) : AndroidViewModel(application
         val uid = userId()
         if (uid.isEmpty() || cultivoId.isEmpty()) return
         viewModelScope.launch {
+            val fecha = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
+
+            val nuevoEstado = when {
+                resultado.plagasDetectadas || resultado.humedadSuelo < 15f ->
+                    EstadoCultivo.CRITICO.name
+                resultado.humedadSuelo < 20f || resultado.nivelNitrogenio < 40f ->
+                    EstadoCultivo.ALERTA.name
+                else -> EstadoCultivo.SALUDABLE.name
+            }
+
+            val indiceSaludLocal = run {
+                var s = 100f
+                if (resultado.plagasDetectadas) s -= 40f
+                s -= when {
+                    resultado.humedadSuelo < 10f -> 35f
+                    resultado.humedadSuelo < 15f -> 25f
+                    resultado.humedadSuelo < 20f -> 15f
+                    resultado.humedadSuelo < 25f ->  5f
+                    resultado.humedadSuelo > 70f -> 10f
+                    else -> 0f
+                }
+                s -= when {
+                    resultado.nivelNitrogenio < 30f -> 20f
+                    resultado.nivelNitrogenio < 45f -> 12f
+                    resultado.nivelNitrogenio < 60f ->  5f
+                    else -> 0f
+                }
+                s -= when {
+                    resultado.nivelFosforo < 40f -> 15f
+                    resultado.nivelFosforo < 50f ->  8f
+                    resultado.nivelFosforo < 60f ->  3f
+                    else -> 0f
+                }
+                s -= when {
+                    resultado.nivelPotasio < 50f -> 10f
+                    resultado.nivelPotasio < 60f ->  5f
+                    else -> 0f
+                }
+                s.coerceIn(5f, 100f)
+            }
+
+            // 1. Actualizar memoria con todos los campos del escaneo
+            val actualizada = _cultivos.value.map { c ->
+                if (c.id == cultivoId) c.copy(
+                    estado           = nuevoEstado,
+                    ultimoEscaneo    = fecha,
+                    humedadPromedio  = resultado.humedadSuelo,
+                    nitrogenio       = resultado.nivelNitrogenio,
+                    fosforo          = resultado.nivelFosforo,
+                    potasio          = resultado.nivelPotasio,
+                    plagasDetectadas = resultado.plagasDetectadas,
+                    indiceSalud      = indiceSaludLocal
+                ) else c
+            }
+            _cultivos.value = actualizada
+
+            // 2. Guardar en disco INMEDIATAMENTE (sincrónico, no depende de red)
+            escribirLocal(actualizada)
+
+            // 3. Notificación local al usuario
+            val nombreCultivo = actualizada.find { it.id == cultivoId }?.nombre ?: "Cultivo"
+            NotificacionHelper.notificarEscaneoCompleto(
+                context          = getApplication(),
+                nombreCultivo    = nombreCultivo,
+                estado           = nuevoEstado,
+                plagasDetectadas = resultado.plagasDetectadas
+            )
+
+            // 4. Intentar guardar en Firestore (en background, sin bloquear)
             try {
-                val fecha = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
-
-                val nuevoEstado = when {
-                    resultado.plagasDetectadas || resultado.humedadSuelo < 15f ->
-                        EstadoCultivo.CRITICO.name
-                    resultado.humedadSuelo < 20f || resultado.nivelNitrogenio < 40f ->
-                        EstadoCultivo.ALERTA.name
-                    else -> EstadoCultivo.SALUDABLE.name
-                }
-
-                // 1. Actualización inmediata en memoria
-                val listaActualizada = _cultivos.value.map { c ->
-                    if (c.id == cultivoId) c.copy(
-                        estado           = nuevoEstado,
-                        ultimoEscaneo    = fecha,
-                        humedadPromedio  = resultado.humedadSuelo,
-                        nitrogenio       = resultado.nivelNitrogenio,
-                        fosforo          = resultado.nivelFosforo,
-                        potasio          = resultado.nivelPotasio,
-                        plagasDetectadas = resultado.plagasDetectadas
-                    ) else c
-                }
-                _cultivos.value = listaActualizada
-
-                // 2. Guardado inmediato en disco (no depende de la red)
-                guardarEnLocal(listaActualizada)
-
-                // 3. Guardado en Firestore (cloud)
                 cultivosRef().document(cultivoId).collection("escaneos").add(
                     hashMapOf(
                         "fecha"                   to fecha,
@@ -231,37 +338,6 @@ class CultivosViewModel(application: Application) : AndroidViewModel(application
                     )
                 ).await()
 
-                val indiceSaludCalc = run {
-                    var score = 100f
-                    if (resultado.plagasDetectadas) score -= 40f
-                    score -= when {
-                        resultado.humedadSuelo < 10f -> 35f
-                        resultado.humedadSuelo < 15f -> 25f
-                        resultado.humedadSuelo < 20f -> 15f
-                        resultado.humedadSuelo < 25f -> 5f
-                        resultado.humedadSuelo > 70f -> 10f
-                        else -> 0f
-                    }
-                    score -= when {
-                        resultado.nivelNitrogenio < 30f -> 20f
-                        resultado.nivelNitrogenio < 45f -> 12f
-                        resultado.nivelNitrogenio < 60f -> 5f
-                        else -> 0f
-                    }
-                    score -= when {
-                        resultado.nivelFosforo < 40f -> 15f
-                        resultado.nivelFosforo < 50f -> 8f
-                        resultado.nivelFosforo < 60f -> 3f
-                        else -> 0f
-                    }
-                    score -= when {
-                        resultado.nivelPotasio < 50f -> 10f
-                        resultado.nivelPotasio < 60f -> 5f
-                        else -> 0f
-                    }
-                    score.coerceIn(5f, 100f)
-                }
-
                 cultivosRef().document(cultivoId).update(
                     mapOf(
                         "estado"           to nuevoEstado,
@@ -271,54 +347,47 @@ class CultivosViewModel(application: Application) : AndroidViewModel(application
                         "fosforo"          to resultado.nivelFosforo,
                         "potasio"          to resultado.nivelPotasio,
                         "plagasDetectadas" to resultado.plagasDetectadas,
-                        "indiceSalud"      to indiceSaludCalc
+                        "indiceSalud"      to indiceSaludLocal
                     )
                 ).await()
 
-            } catch (e: Exception) {
-                _error.value = "No se pudo sincronizar con la nube, pero el escaneo está guardado localmente."
+            } catch (_: Exception) {
+                // Firestore falló pero el dato ya está guardado localmente
             }
         }
     }
 
     fun cargarUltimoEscaneo(cultivoId: String) {
-        val uid = userId()
-        if (uid.isEmpty() || cultivoId.isEmpty()) return
+        if (userId().isEmpty() || cultivoId.isEmpty()) return
         viewModelScope.launch {
             _cargandoEscaneo.value = true
             _ultimoEscaneo.value = null
             try {
                 val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-                val snapshot = cultivosRef()
-                    .document(cultivoId)
-                    .collection("escaneos")
-                    .get()
-                    .await()
-                val latestDoc = snapshot.documents
-                    .sortedByDescending { doc ->
-                        try { sdf.parse(doc.getString("fecha") ?: "") } catch (_: Exception) { null }
-                    }
+                val snapshot = cultivosRef().document(cultivoId)
+                    .collection("escaneos").get().await()
+                val doc = snapshot.documents
+                    .sortedByDescending { runCatching { sdf.parse(it.getString("fecha") ?: "") }.getOrNull() }
                     .firstOrNull()
-                if (latestDoc != null) {
+                if (doc != null) {
                     _ultimoEscaneo.value = UltimoEscaneoData(
-                        fecha                   = latestDoc.getString("fecha")                    ?: "",
-                        confianzaIA             = (latestDoc.getLong("confianzaIA")               ?: 0L).toInt(),
-                        gpsLat                  = latestDoc.getDouble("gpsLat")                   ?: 0.0,
-                        gpsLon                  = latestDoc.getDouble("gpsLon")                   ?: 0.0,
-                        humedadSuelo            = (latestDoc.getDouble("humedadSuelo")            ?: 0.0).toFloat(),
-                        estresSuelo             = latestDoc.getString("estresSuelo")              ?: "",
-                        descripcionSuelo        = latestDoc.getString("descripcionSuelo")         ?: "",
-                        plagasDetectadas        = latestDoc.getBoolean("plagasDetectadas")        ?: false,
-                        descripcionPlagas       = latestDoc.getString("descripcionPlagas")        ?: "",
-                        nivelNitrogenio         = (latestDoc.getDouble("nivelNitrogenio")         ?: 0.0).toFloat(),
-                        nivelFosforo            = (latestDoc.getDouble("nivelFosforo")            ?: 0.0).toFloat(),
-                        nivelPotasio            = (latestDoc.getDouble("nivelPotasio")            ?: 0.0).toFloat(),
-                        descripcionNutrientes   = latestDoc.getString("descripcionNutrientes")    ?: "",
-                        recomendacionNutrientes = latestDoc.getString("recomendacionNutrientes")  ?: ""
+                        fecha                   = doc.getString("fecha")                    ?: "",
+                        confianzaIA             = (doc.getLong("confianzaIA")               ?: 0L).toInt(),
+                        gpsLat                  = doc.getDouble("gpsLat")                   ?: 0.0,
+                        gpsLon                  = doc.getDouble("gpsLon")                   ?: 0.0,
+                        humedadSuelo            = (doc.getDouble("humedadSuelo")            ?: 0.0).toFloat(),
+                        estresSuelo             = doc.getString("estresSuelo")              ?: "",
+                        descripcionSuelo        = doc.getString("descripcionSuelo")         ?: "",
+                        plagasDetectadas        = doc.getBoolean("plagasDetectadas")        ?: false,
+                        descripcionPlagas       = doc.getString("descripcionPlagas")        ?: "",
+                        nivelNitrogenio         = (doc.getDouble("nivelNitrogenio")         ?: 0.0).toFloat(),
+                        nivelFosforo            = (doc.getDouble("nivelFosforo")            ?: 0.0).toFloat(),
+                        nivelPotasio            = (doc.getDouble("nivelPotasio")            ?: 0.0).toFloat(),
+                        descripcionNutrientes   = doc.getString("descripcionNutrientes")    ?: "",
+                        recomendacionNutrientes = doc.getString("recomendacionNutrientes")  ?: ""
                     )
                 }
             } catch (_: Exception) {
-                _ultimoEscaneo.value = null
             } finally {
                 _cargandoEscaneo.value = false
             }
