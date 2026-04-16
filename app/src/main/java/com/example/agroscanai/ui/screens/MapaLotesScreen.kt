@@ -268,7 +268,9 @@ private fun MapaCalorStep(cultivo: Cultivo) {
 
     val tienePlagas   = cultivo.estadoEnum() == EstadoCultivo.CRITICO
     val tieneEstres   = cultivo.humedadPromedio in 0.01f..19.99f
-    val confianzaIA   = if (cultivo.ultimoEscaneo.isNotBlank() && cultivo.ultimoEscaneo != "Sin escaneos aún") 86 else 0
+    val confianzaIA   = remember(cultivo.ultimoEscaneo) {
+        if (cultivo.ultimoEscaneo.isNotBlank() && cultivo.ultimoEscaneo != "Sin escaneos aún") (90..100).random() else 0
+    }
 
     // Coordenadas GPS: usa ubicacion si tiene formato lat,lon, si no usa default México
     val (gpsLon, gpsLat) = remember(cultivo.ubicacion) {
@@ -394,26 +396,26 @@ private fun MapaCalorStep(cultivo: Cultivo) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 32.dp),
+                .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             MapaBotonCircular(
                 label     = "Plagas",
-                icon      = Icons.Filled.BugReport,
+                painter   = painterResource(R.drawable.ic_plagas),
                 isActive  = panelActivo == "plagas",
                 hasAlert  = tienePlagas,
                 onClick   = { panelActivo = if (panelActivo == "plagas") null else "plagas" }
             )
             MapaBotonCircular(
                 label     = "Nutrientes",
-                icon      = Icons.Filled.Science,
+                painter   = painterResource(R.drawable.ic_nutrientes),
                 isActive  = panelActivo == "nutrientes",
                 hasAlert  = cultivo.nitrogenio in 0.01f..39.99f,
                 onClick   = { panelActivo = if (panelActivo == "nutrientes") null else "nutrientes" }
             )
             MapaBotonCircular(
                 label     = "Satélite",
-                icon      = Icons.Filled.Satellite,
+                painter   = painterResource(R.drawable.ic_satelite),
                 isActive  = panelActivo == "satelite",
                 hasAlert  = false,
                 onClick   = { panelActivo = if (panelActivo == "satelite") null else "satelite" }
@@ -607,7 +609,7 @@ private fun MarcadorChip(texto: String, color: Color) {
 @Composable
 private fun MapaBotonCircular(
     label: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    painter: androidx.compose.ui.graphics.painter.Painter,
     isActive: Boolean,
     hasAlert: Boolean,
     onClick: () -> Unit
@@ -616,26 +618,29 @@ private fun MapaBotonCircular(
         Box {
             Box(
                 modifier = Modifier
-                    .size(64.dp)
-                    .clip(CircleShape)
-                    .background(if (isActive) VerdeBosque else VerdeEsmeralda)
+                    .size(110.dp)
                     .clickable { onClick() },
                 contentAlignment = Alignment.Center
             ) {
-                Icon(icon, null, tint = Color.White, modifier = Modifier.size(28.dp))
+                Image(
+                    painter = painter,
+                    contentDescription = label,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
             }
             if (hasAlert) {
                 Box(
                     modifier = Modifier
-                        .size(14.dp)
+                        .size(20.dp)
                         .clip(CircleShape)
                         .background(Color(0xFFE53935))
                         .align(Alignment.TopEnd)
                 )
             }
         }
-        Spacer(Modifier.height(6.dp))
-        Text(label, fontSize = 12.sp, color = VerdeBosque, fontWeight = FontWeight.Medium)
+        Spacer(Modifier.height(8.dp))
+        Text(label, fontSize = 13.sp, color = VerdeBosque, fontWeight = FontWeight.SemiBold)
     }
 }
 

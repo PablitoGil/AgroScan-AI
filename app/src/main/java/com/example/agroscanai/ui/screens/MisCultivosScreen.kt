@@ -180,18 +180,16 @@ fun MisCultivosScreen(
                     .padding(end = 20.dp, bottom = 28.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Box(
+                Image(
+                    painter = painterResource(R.drawable.ic_anadircultivo),
+                    contentDescription = "Añadir cultivo",
                     modifier = Modifier
-                        .size(64.dp)
-                        .clip(CircleShape)
-                        .background(VerdeEsmeralda)
+                        .size(110.dp)
                         .clickable { showAddSheet = true },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Filled.Add, "Añadir", tint = Color.White, modifier = Modifier.size(32.dp))
-                }
+                    contentScale = ContentScale.Crop
+                )
                 Spacer(Modifier.height(4.dp))
-                Text("Añadir cultivo", fontSize = 11.sp, color = VerdeBosque, fontWeight = FontWeight.Medium)
+                Text("Añadir cultivo", fontSize = 13.sp, color = VerdeBosque, fontWeight = FontWeight.SemiBold)
             }
 
             Text(
@@ -356,7 +354,15 @@ private fun AnadirCultivoSheet(
         )
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(
-            value = fechaSiembra, onValueChange = { fechaSiembra = it },
+            value = fechaSiembra,
+            onValueChange = { input ->
+                val digits = input.filter { it.isDigit() }.take(8)
+                fechaSiembra = when {
+                    digits.length <= 2 -> digits
+                    digits.length <= 4 -> "${digits.substring(0, 2)}/${digits.substring(2)}"
+                    else -> "${digits.substring(0, 2)}/${digits.substring(2, 4)}/${digits.substring(4)}"
+                }
+            },
             label = { Text("Fecha de siembra (dd/mm/aaaa)") },
             modifier = Modifier.fillMaxWidth(), singleLine = true,
             shape = RoundedCornerShape(12.dp), colors = fieldColors,

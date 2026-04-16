@@ -11,6 +11,8 @@ import com.example.agroscanai.ui.viewmodel.CalendarioViewModel
 import com.example.agroscanai.ui.viewmodel.CultivosViewModel
 import com.example.agroscanai.ui.viewmodel.DroneViewModel
 import com.example.agroscanai.ui.viewmodel.PerfilViewModel
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 
 object Routes {
     const val SPLASH               = "splash"
@@ -72,7 +74,9 @@ fun NavGraph(navController: NavHostController) {
         composable(Routes.SPLASH) {
             SplashScreen(
                 onFinished = {
-                    navController.navigate(Routes.ONBOARDING) {
+                    val user = Firebase.auth.currentUser
+                    val destino = if (user != null && user.isEmailVerified) Routes.HOME else Routes.ONBOARDING
+                    navController.navigate(destino) {
                         popUpTo(Routes.SPLASH) { inclusive = true }
                     }
                 }

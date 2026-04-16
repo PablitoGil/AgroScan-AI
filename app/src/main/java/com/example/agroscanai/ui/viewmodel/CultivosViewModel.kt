@@ -1,15 +1,18 @@
 package com.example.agroscanai.ui.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import android.content.Context
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.agroscanai.data.model.Cultivo
 import com.example.agroscanai.data.model.EstadoCultivo
-import com.example.agroscanai.ui.viewmodel.ResultadoEscaneo
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,10 +39,12 @@ data class UltimoEscaneoData(
     val recomendacionNutrientes: String = ""
 )
 
-class CultivosViewModel : ViewModel() {
+class CultivosViewModel(application: Application) : AndroidViewModel(application) {
 
     private val db   = Firebase.firestore
     private val auth = Firebase.auth
+    private val gson = Gson()
+    private val prefs = application.getSharedPreferences("agroscan_cultivos", Context.MODE_PRIVATE)
 
     private val _cultivos   = MutableStateFlow<List<Cultivo>>(emptyList())
     val cultivos: StateFlow<List<Cultivo>> = _cultivos.asStateFlow()
@@ -60,6 +65,7 @@ class CultivosViewModel : ViewModel() {
 
     private val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
         if (firebaseAuth.currentUser != null) {
+            cargarDesdeLocal()
             if (snapshotListener == null) cargarCultivos()
         } else {
             snapshotListener?.remove()
@@ -73,8 +79,32 @@ class CultivosViewModel : ViewModel() {
     private fun cultivosRef() =
         db.collection("users").document(userId()).collection("cultivos")
 
+    // ── Caché local ──────────────────────────────────────────────────────────
+
+    private fun claveLocal() = "cultivos_${userId()}"
+
+    private fun guardarEnLocal(lista: List<Cultivo>) {
+        if (userId().isEmpty()) return
+        prefs.edit().putString(claveLocal(), gson.toJson(lista)).apply()
+    }
+
+    private fun cargarDesdeLocal() {
+        val uid = userId()
+        if (uid.isEmpty()) return
+        val json = prefs.getString(claveLocal(), null) ?: return
+        try {
+            val tipo = object : TypeToken<List<Cultivo>>() {}.type
+            val lista: List<Cultivo> = gson.fromJson(json, tipo)
+            if (lista.isNotEmpty()) _cultivos.value = lista
+        } catch (_: Exception) {}
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
+
     init {
+        cargarDesdeLocal()
         auth.addAuthStateListener(authStateListener)
+        if (auth.currentUser != null) cargarCultivos()
     }
 
     fun cargarCultivos() {
@@ -85,16 +115,16 @@ class CultivosViewModel : ViewModel() {
         snapshotListener = cultivosRef().addSnapshotListener { snapshot, e ->
             _isLoading.value = false
             if (e != null) { _error.value = "Error al cargar cultivos"; return@addSnapshotListener }
-            _cultivos.value = snapshot?.documents?.map { doc ->
+            val lista = snapshot?.documents?.map { doc ->
                 Cultivo(
                     id               = doc.id,
-                    nombre           = doc.getString("nombre")          ?: "",
-                    tipoCultivo      = doc.getString("tipoCultivo")     ?: "",
-                    variedadSemilla  = doc.getString("variedadSemilla") ?: "",
-                    hectareas        = doc.getDouble("hectareas")       ?: 0.0,
-                    fechaSiembra     = doc.getString("fechaSiembra")    ?: "",
-                    ubicacion        = doc.getString("ubicacion")       ?: "",
-                    estado           = doc.getString("estado")          ?: EstadoCultivo.SIN_ESCANEO.name,
+                    nombre           = doc.getString("nombre")           ?: "",
+                    tipoCultivo      = doc.getString("tipoCultivo")      ?: "",
+                    variedadSemilla  = doc.getString("variedadSemilla")  ?: "",
+                    hectareas        = doc.getDouble("hectareas")        ?: 0.0,
+                    fechaSiembra     = doc.getString("fechaSiembra")     ?: "",
+                    ubicacion        = doc.getString("ubicacion")        ?: "",
+                    estado           = doc.getString("estado")           ?: EstadoCultivo.SIN_ESCANEO.name,
                     humedadPromedio  = (doc.getDouble("humedadPromedio") ?: 0.0).toFloat(),
                     nitrogenio       = (doc.getDouble("nitrogenio")      ?: 0.0).toFloat(),
                     fosforo          = (doc.getDouble("fosforo")         ?: 0.0).toFloat(),
@@ -104,6 +134,8 @@ class CultivosViewModel : ViewModel() {
                     ultimoEscaneo    = doc.getString("ultimoEscaneo")    ?: ""
                 )
             } ?: emptyList()
+            _cultivos.value = lista
+            guardarEnLocal(lista)   // ← guarda en disco cada vez que Firestore responde
         }
     }
 
@@ -162,18 +194,24 @@ class CultivosViewModel : ViewModel() {
                     else -> EstadoCultivo.SALUDABLE.name
                 }
 
-                // Actualización inmediata en memoria para reflejar el estado al instante en la UI
-                _cultivos.value = _cultivos.value.map { c ->
+                // 1. Actualización inmediata en memoria
+                val listaActualizada = _cultivos.value.map { c ->
                     if (c.id == cultivoId) c.copy(
-                        estado          = nuevoEstado,
-                        ultimoEscaneo   = fecha,
-                        humedadPromedio = resultado.humedadSuelo,
-                        nitrogenio      = resultado.nivelNitrogenio,
-                        fosforo         = resultado.nivelFosforo,
-                        potasio         = resultado.nivelPotasio
+                        estado           = nuevoEstado,
+                        ultimoEscaneo    = fecha,
+                        humedadPromedio  = resultado.humedadSuelo,
+                        nitrogenio       = resultado.nivelNitrogenio,
+                        fosforo          = resultado.nivelFosforo,
+                        potasio          = resultado.nivelPotasio,
+                        plagasDetectadas = resultado.plagasDetectadas
                     ) else c
                 }
+                _cultivos.value = listaActualizada
 
+                // 2. Guardado inmediato en disco (no depende de la red)
+                guardarEnLocal(listaActualizada)
+
+                // 3. Guardado en Firestore (cloud)
                 cultivosRef().document(cultivoId).collection("escaneos").add(
                     hashMapOf(
                         "fecha"                   to fecha,
@@ -226,19 +264,19 @@ class CultivosViewModel : ViewModel() {
 
                 cultivosRef().document(cultivoId).update(
                     mapOf(
-                        "estado"            to nuevoEstado,
-                        "ultimoEscaneo"     to fecha,
-                        "humedadPromedio"   to resultado.humedadSuelo,
-                        "nitrogenio"        to resultado.nivelNitrogenio,
-                        "fosforo"           to resultado.nivelFosforo,
-                        "potasio"           to resultado.nivelPotasio,
-                        "plagasDetectadas"  to resultado.plagasDetectadas,
-                        "indiceSalud"       to indiceSaludCalc
+                        "estado"           to nuevoEstado,
+                        "ultimoEscaneo"    to fecha,
+                        "humedadPromedio"  to resultado.humedadSuelo,
+                        "nitrogenio"       to resultado.nivelNitrogenio,
+                        "fosforo"          to resultado.nivelFosforo,
+                        "potasio"          to resultado.nivelPotasio,
+                        "plagasDetectadas" to resultado.plagasDetectadas,
+                        "indiceSalud"      to indiceSaludCalc
                     )
                 ).await()
 
             } catch (e: Exception) {
-                _error.value = "No se pudo guardar el escaneo."
+                _error.value = "No se pudo sincronizar con la nube, pero el escaneo está guardado localmente."
             }
         }
     }
@@ -258,7 +296,7 @@ class CultivosViewModel : ViewModel() {
                     .await()
                 val latestDoc = snapshot.documents
                     .sortedByDescending { doc ->
-                        try { sdf.parse(doc.getString("fecha") ?: "") } catch (e: Exception) { null }
+                        try { sdf.parse(doc.getString("fecha") ?: "") } catch (_: Exception) { null }
                     }
                     .firstOrNull()
                 if (latestDoc != null) {
@@ -279,7 +317,7 @@ class CultivosViewModel : ViewModel() {
                         recomendacionNutrientes = latestDoc.getString("recomendacionNutrientes")  ?: ""
                     )
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 _ultimoEscaneo.value = null
             } finally {
                 _cargandoEscaneo.value = false

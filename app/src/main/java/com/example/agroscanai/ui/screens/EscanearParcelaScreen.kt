@@ -157,8 +157,13 @@ fun EscanearParcelaScreen(
                         when (estado) {
                             DroneEstado.DESCONECTADO, DroneEstado.ERROR ->
                                 mostrarDialogoConexion = true
-                            DroneEstado.CONECTADO ->
-                                droneViewModel.iniciarEscaneo()
+                            DroneEstado.CONECTADO -> {
+                                val parts = cultivoSeleccionado?.ubicacion
+                                    ?.split(",")?.mapNotNull { it.trim().toDoubleOrNull() }
+                                val lat = parts?.getOrNull(0) ?: 19.4326
+                                val lon = parts?.getOrNull(1) ?: -99.1332
+                                droneViewModel.iniciarEscaneo(lat, lon)
+                            }
                             DroneEstado.ESCANEO_COMPLETO -> {
                                 droneViewModel.reiniciarEscaneo()
                                 escaneadoGuardado = false
@@ -492,17 +497,17 @@ private fun EscaneoStep(
 
         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp),
             horizontalArrangement = Arrangement.SpaceEvenly) {
-            InfoCircleButton("Plagas", Icons.Filled.BugReport,
+            InfoCircleButton("Plagas", painterResource(R.drawable.ic_plagas),
                 enabled = estado == DroneEstado.ESCANEO_COMPLETO,
                 isActive = infoActivaPanel == "plagas",
                 hasAlert = resultado.plagasDetectadas,
                 onClick = { onInfoPanelClick("plagas") })
-            InfoCircleButton("Nutrientes", Icons.Filled.Science,
+            InfoCircleButton("Nutrientes", painterResource(R.drawable.ic_nutrientes),
                 enabled = estado == DroneEstado.ESCANEO_COMPLETO,
                 isActive = infoActivaPanel == "nutrientes",
                 hasAlert = resultado.nivelNitrogenio < 40f && resultado.nivelNitrogenio > 0f,
                 onClick = { onInfoPanelClick("nutrientes") })
-            InfoCircleButton("Suelo", Icons.Filled.Terrain,
+            InfoCircleButton("Suelo", painterResource(R.drawable.ic_suelo),
                 enabled = estado == DroneEstado.ESCANEO_COMPLETO,
                 isActive = infoActivaPanel == "suelo",
                 hasAlert = resultado.humedadSuelo < 20f && resultado.humedadSuelo > 0f,
@@ -510,6 +515,30 @@ private fun EscaneoStep(
         }
 
         Spacer(Modifier.height(20.dp))
+
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            InfoCircleButton(
+                label = when (estado) {
+                    DroneEstado.ESCANEANDO -> "Escaneando..."
+                    DroneEstado.ESCANEO_COMPLETO -> "Nuevo escaneo"
+                    DroneEstado.DESCONECTADO, DroneEstado.ERROR -> "Conectar"
+                    else -> "Escanear"
+                },
+                painter = painterResource(R.drawable.ic_escanear),
+                enabled = estado != DroneEstado.ESCANEANDO &&
+                        estado != DroneEstado.BUSCANDO &&
+                        estado != DroneEstado.CONECTANDO,
+                isActive = estado == DroneEstado.ESCANEO_COMPLETO,
+                hasAlert = false,
+                isLoading = estado == DroneEstado.ESCANEANDO ||
+                        estado == DroneEstado.BUSCANDO ||
+                        estado == DroneEstado.CONECTANDO,
+                onClick = onEscanearClick
+            )
+        }
 
         if (estado == DroneEstado.BUSCANDO || estado == DroneEstado.CONECTANDO) {
             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
@@ -560,46 +589,6 @@ private fun EscaneoStep(
             ResumenResultados(resultado = resultado,
                 modifier = Modifier.padding(horizontal = 16.dp))
             Spacer(Modifier.height(12.dp))
-        }
-
-        Button(
-            onClick = onEscanearClick,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).height(54.dp),
-            shape = RoundedCornerShape(28.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = when (estado) {
-                    DroneEstado.ESCANEANDO -> GrisMedio
-                    DroneEstado.ESCANEO_COMPLETO -> VerdeBosqueOscuro
-                    else -> VerdeEsmeralda
-                },
-                contentColor = Color.White
-            ),
-            enabled = estado != DroneEstado.ESCANEANDO &&
-                    estado != DroneEstado.BUSCANDO &&
-                    estado != DroneEstado.CONECTANDO
-        ) {
-            when (estado) {
-                DroneEstado.ESCANEANDO -> {
-                    CircularProgressIndicator(color = Color.White,
-                        modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                    Spacer(Modifier.width(10.dp))
-                    Text("Escaneando...", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                }
-                DroneEstado.ESCANEO_COMPLETO -> {
-                    Icon(Icons.Filled.Refresh, null, modifier = Modifier.size(22.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text("Nuevo escaneo", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                }
-                else -> {
-                    Icon(Icons.Filled.FlightTakeoff, null, modifier = Modifier.size(22.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        if (estado == DroneEstado.DESCONECTADO || estado == DroneEstado.ERROR)
-                            "Conectar y escanear" else "Escanear",
-                        fontSize = 16.sp, fontWeight = FontWeight.Bold
-                    )
-                }
-            }
         }
 
         Spacer(Modifier.height(20.dp))
@@ -699,35 +688,47 @@ private fun DroneStatusBar(
 @Composable
 private fun InfoCircleButton(
     label: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    painter: androidx.compose.ui.graphics.painter.Painter,
     enabled: Boolean,
     isActive: Boolean,
     hasAlert: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    isLoading: Boolean = false
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box {
             Box(
-                modifier = Modifier.size(64.dp).clip(CircleShape)
-                    .background(when { !enabled -> Color(0xFFE0E0E0); isActive -> VerdeBosque; else -> VerdeEsmeralda })
+                modifier = Modifier.size(110.dp)
                     .then(if (enabled) Modifier.clickable { onClick() } else Modifier),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(icon, null, tint = if (!enabled) GrisMedio else Color.White,
-                    modifier = Modifier.size(28.dp))
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        color = VerdeEsmeralda,
+                        modifier = Modifier.size(48.dp),
+                        strokeWidth = 3.dp
+                    )
+                } else {
+                    Image(
+                        painter = painter,
+                        contentDescription = label,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Fit
+                    )
+                }
             }
             if (hasAlert && enabled) {
                 Box(
-                    modifier = Modifier.size(16.dp).clip(CircleShape).background(RojoAlerta)
+                    modifier = Modifier.size(20.dp).clip(CircleShape).background(RojoAlerta)
                         .align(Alignment.TopEnd).border(2.dp, Color.White, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("!", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    Text("!", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
-        Spacer(Modifier.height(6.dp))
-        Text(label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
+        Spacer(Modifier.height(8.dp))
+        Text(label, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
             color = if (enabled) VerdeBosque else GrisMedio)
     }
 }

@@ -200,15 +200,13 @@ class DroneViewModel(application: Application) : AndroidViewModel(application) {
         for (i in 0..100) {
             delay(120)
             val faseIdx = (i / 10).coerceAtMost(fases.size - 1)
-            val confianza = (60 + (i * 0.26)).roundToInt().coerceAtMost(86)
-            val latDrift = gpsLat + (i * 0.000015)
-            val lonDrift = gpsLon + (i * 0.000008)
+            val confianza = (60 + (i * 0.30)).roundToInt().coerceAtMost(90)
 
             _mensajeEstado.value = fases[faseIdx]
             _resultado.value = _resultado.value.copy(
                 progresoPercent = i,
-                gpsLat = latDrift,
-                gpsLon = lonDrift,
+                gpsLat = gpsLat,
+                gpsLon = gpsLon,
                 confianzaIA = confianza
             )
 
@@ -223,9 +221,10 @@ class DroneViewModel(application: Application) : AndroidViewModel(application) {
         val potasio = (40 + Math.random() * 40).toFloat()
         val plagasDetectadas = Math.random() < 0.25
 
+        val confianzaFinal = (90..100).random()
         _resultado.value = _resultado.value.copy(
             progresoPercent = 100,
-            confianzaIA = 86,
+            confianzaIA = confianzaFinal,
             humedadSuelo = humedad,
             estresSuelo = if (humedad < 20f) "Estrés hídrico detectado" else "Humedad adecuada",
             descripcionSuelo = if (humedad < 20f)
@@ -287,7 +286,7 @@ class DroneViewModel(application: Application) : AndroidViewModel(application) {
                                     progresoPercent = progreso,
                                     gpsLat = datos.lat,
                                     gpsLon = datos.lon,
-                                    confianzaIA = (60 + progreso * 0.26).roundToInt().coerceAtMost(86)
+                                    confianzaIA = (60 + progreso * 0.26).roundToInt().coerceAtMost(90)
                                 )
                                 _droneInfo.value = _droneInfo.value.copy(
                                     bateria = datos.bateria,
@@ -302,7 +301,7 @@ class DroneViewModel(application: Application) : AndroidViewModel(application) {
                         withContext(Dispatchers.Main) {
                             _resultado.value = _resultado.value.copy(
                                 progresoPercent = progreso,
-                                confianzaIA = (60 + progreso * 0.26).roundToInt().coerceAtMost(86)
+                                confianzaIA = (60 + progreso * 0.26).roundToInt().coerceAtMost(90)
                             )
                         }
                     }
@@ -330,7 +329,7 @@ class DroneViewModel(application: Application) : AndroidViewModel(application) {
         val plagasDetectadas = Math.random() < 0.25
         _resultado.value = _resultado.value.copy(
             progresoPercent = 100,
-            confianzaIA = 86,
+            confianzaIA = (90..100).random(),
             humedadSuelo = humedad,
             estresSuelo = if (humedad < 20f) "Estrés hídrico detectado" else "Humedad adecuada",
             descripcionSuelo = if (humedad < 20f)
