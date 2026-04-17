@@ -123,7 +123,6 @@ fun DetalleCultivoScreen(
             .padding(innerPadding)
             .verticalScroll(rememberScrollState())
     ) {
-        // ── Header ──────────────────────────────────────────────────────────
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -170,7 +169,6 @@ fun DetalleCultivoScreen(
 
         Spacer(Modifier.height((-16).dp))
 
-        // ── Índice de salud + stats ──────────────────────────────────────────
         Card(
             modifier  = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -234,7 +232,6 @@ fun DetalleCultivoScreen(
 
         Spacer(Modifier.height(12.dp))
 
-        // ── Barras de nutrientes ─────────────────────────────────────────────
         if (cultivo.nitrogenio > 0f || cultivo.fosforo > 0f || cultivo.potasio > 0f) {
             Card(
                 modifier  = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
@@ -257,8 +254,7 @@ fun DetalleCultivoScreen(
             Spacer(Modifier.height(12.dp))
         }
 
-        // ── Info del cultivo ─────────────────────────────────────────────────
-        Card(
+         Card(
             modifier  = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             shape     = RoundedCornerShape(16.dp),
@@ -281,7 +277,6 @@ fun DetalleCultivoScreen(
 
         Spacer(Modifier.height(12.dp))
 
-        // ── Detalle del último escaneo (expandible) ──────────────────────────
         Card(
             modifier  = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -326,8 +321,7 @@ fun DetalleCultivoScreen(
 
         Spacer(Modifier.height(20.dp))
 
-        // ── Botón eliminar ───────────────────────────────────────────────────
-        OutlinedButton(
+         OutlinedButton(
             onClick  = { showDeleteDialog = true },
             modifier = Modifier
                 .fillMaxWidth()
@@ -343,11 +337,10 @@ fun DetalleCultivoScreen(
         }
 
         Spacer(Modifier.height(32.dp))
-    } // end Column
-    } // end Scaffold content
+    }
+    }
 }
 
-// ── Sub-composables ──────────────────────────────────────────────────────────
 
 @Composable
 private fun MiniStat(label: String, value: String, color: Color) {

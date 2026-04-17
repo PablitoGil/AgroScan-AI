@@ -61,7 +61,7 @@ fun HomeScreen(
                 onNotificacionesClick = onNotificacionesClick,
                 onPerfilClick         = onPerfilClick,
                 paginaActual          = PaginaActual.HOME
-            )
+            )//bara inferior
         }
     ) { innerPadding ->
     Column(

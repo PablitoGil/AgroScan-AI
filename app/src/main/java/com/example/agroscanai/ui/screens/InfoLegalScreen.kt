@@ -75,7 +75,7 @@ fun InfoLegalScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        // ── Secciones de contenido ────────────────────────────────────────────
+        // Contenido de la sección
         config.secciones.forEach { seccion ->
             Card(
                 modifier  = Modifier
@@ -126,7 +126,7 @@ fun InfoLegalScreen(
     } // end Scaffold content
 }
 
-// ── Datos de contenido ───────────────────────────────────────────────────────
+// Datos de configuración
 
 private data class SeccionInfo(
     val titulo: String = "",

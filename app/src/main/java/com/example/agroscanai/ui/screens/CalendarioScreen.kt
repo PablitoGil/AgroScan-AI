@@ -56,7 +56,6 @@ private fun diasEnMes(mes: Int, anio: Int): Int {
 private fun primerDiaSemana(mes: Int, anio: Int): Int {
     val cal = Calendar.getInstance()
     cal.set(anio, mes, 1)
-    // Lunes=0..Domingo=6
     return (cal.get(Calendar.DAY_OF_WEEK) - Calendar.MONDAY + 7) % 7
 }
 
@@ -97,7 +96,7 @@ private fun etiquetaTipo(tipo: TipoTarea): String = when (tipo) {
     TipoTarea.MANUAL         -> "Manual"
 }
 
-// ── Screen ────────────────────────────────────────────────────────────────────
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -170,7 +169,7 @@ fun CalendarioScreen(
                 .verticalScroll(rememberScrollState())
         ) {
 
-            // ── Header ────────────────────────────────────────────────────────
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -200,7 +199,7 @@ fun CalendarioScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            // ── Navegación de mes ─────────────────────────────────────────────
+
             Card(
                 modifier  = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 colors    = CardDefaults.cardColors(containerColor = Color.White),
@@ -237,7 +236,7 @@ fun CalendarioScreen(
                         }
                     }
 
-                    // Cabecera días
+
                     Row(modifier = Modifier.fillMaxWidth()) {
                         DIAS_ES.forEach { d ->
                             Box(
@@ -251,7 +250,7 @@ fun CalendarioScreen(
 
                     Spacer(Modifier.height(6.dp))
 
-                    // Grilla de días
+
                     val diasTotales = diasEnMes(mesActual, anioActual)
                     val primerDia  = primerDiaSemana(mesActual, anioActual)
                     val totalCeldas = primerDia + diasTotales
@@ -326,7 +325,7 @@ fun CalendarioScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            // ── Tareas del día seleccionado ────────────────────────────────────
+
             Row(
                 modifier = Modifier.padding(start = 24.dp, end = 16.dp, bottom = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -378,7 +377,7 @@ fun CalendarioScreen(
                 }
             }
 
-            // ── Resumen del mes ───────────────────────────────────────────────
+
             if (tareasDelMes.isNotEmpty()) {
                 Spacer(Modifier.height(8.dp))
                 Text(
@@ -405,11 +404,11 @@ fun CalendarioScreen(
                 }
             }
 
-            Spacer(Modifier.height(88.dp)) // espacio para FAB
+            Spacer(Modifier.height(88.dp))
         }
     }
 
-    // ── BottomSheet: nueva tarea ──────────────────────────────────────────────
+
     if (showSheet) {
         NuevaTareaSheet(
             sheetState         = sheetState,
@@ -424,7 +423,7 @@ fun CalendarioScreen(
     }
 }
 
-// ── Composables privados ──────────────────────────────────────────────────────
+
 
 @Composable
 private fun TareaCard(

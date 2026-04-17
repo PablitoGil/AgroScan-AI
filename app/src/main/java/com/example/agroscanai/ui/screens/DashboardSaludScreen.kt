@@ -518,13 +518,10 @@ private fun LegendaNutrientes() {
     }
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-//  Plaga Bar Chart
-// ──────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun PlagaBarChart(plagasDetectadas: Boolean) {
-    // Two bars: Presencia and Riesgo
+
     val presenciaVal = if (plagasDetectadas) 4.2f else 0.4f
     val riesgoVal    = if (plagasDetectadas) 3.5f else 0.2f
     val maxVal       = 5f
@@ -608,9 +605,6 @@ private fun PlagaBarChart(plagasDetectadas: Boolean) {
     }
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-//  Dashboard Detallado
-// ──────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun DashboardDetallado(
@@ -626,7 +620,6 @@ private fun DashboardDetallado(
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
     ) {
-        // ── Separador visual ─────────────────────────────────────────────────
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -663,7 +656,6 @@ private fun DashboardDetallado(
             return
         }
 
-        // ── 1. Análisis Completo de Nutrientes ──────────────────────────────
         DetalleCard(
             titulo = "Análisis Completo de Nutrientes",
             icono  = Icons.Filled.Science
@@ -705,12 +697,11 @@ private fun DashboardDetallado(
 
         Spacer(Modifier.height(10.dp))
 
-        // ── 2. Condiciones del Suelo ─────────────────────────────────────────
         DetalleCard(
             titulo = "Condiciones del Suelo",
             icono  = Icons.Filled.Terrain
         ) {
-            // Humedad gauge
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -797,7 +788,6 @@ private fun DashboardDetallado(
 
         Spacer(Modifier.height(10.dp))
 
-        // ── 3. Detección de Plagas ───────────────────────────────────────────
         DetalleCard(
             titulo = "Detección de Plagas",
             icono  = Icons.Filled.BugReport
@@ -869,7 +859,6 @@ private fun DashboardDetallado(
 
         Spacer(Modifier.height(10.dp))
 
-        // ── 4. Resumen de Índice de Salud por Categoría ─────────────────────
         DetalleCard(
             titulo = "Resumen del Índice de Salud",
             icono  = Icons.Filled.BarChart
@@ -913,7 +902,6 @@ private fun DashboardDetallado(
 
         Spacer(Modifier.height(10.dp))
 
-        // ── 5. Datos Técnicos del Escaneo ────────────────────────────────────
         DetalleCard(
             titulo = "Datos Técnicos del Escaneo",
             icono  = Icons.Filled.Sensors
@@ -939,9 +927,6 @@ private fun DashboardDetallado(
     }
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-//  Sub-composables
-// ──────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun DetalleCard(
@@ -1048,9 +1033,6 @@ private fun DatoTecnicoItem(
     Divider(color = Color(0xFFF0F0F0))
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-//  Score helpers
-// ──────────────────────────────────────────────────────────────────────────────
 
 private fun calcularScoreNutrientes(n: Float, p: Float, k: Float): Float {
     var score = 100f
